@@ -13,11 +13,13 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += main.cpp \
-    gameview.cpp \
-    gamelogic.cpp \
-    mainwindow.cpp
+    GameLogic/gamelogic.cpp \
+    GameView/gameview.cpp \
+    GameView/mainwindow.cpp \
+    Utilities/rleparser.cpp \
 
-RESOURCES += qml.qrc
+RESOURCES += qml.qrc \
+             patterns.qrc
 
 # Additional import path used to resolve QML modules in Qt Creator's code model
 QML_IMPORT_PATH =
@@ -31,6 +33,7 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
-    gameview.h \
-    gamelogic.h \
-    mainwindow.h
+    GameLogic/gamelogic.h \
+    GameView/gameview.h \
+    GameView/mainwindow.h \
+    Utilities/rleparser.h

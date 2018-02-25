@@ -19,6 +19,7 @@ Item {
       width: fieldSize.x
       height: fieldSize.y
       fillColor: "#000000"
+      scale: pinchArea.pinch.maximumScale
       anchors.verticalCenter: parent.verticalCenter
       anchors.horizontalCenter: parent.horizontalCenter
 
@@ -38,7 +39,7 @@ Item {
           touchPoints: [
             TouchPoint { id: touchPoint }
           ]
-          onPressed: {
+          onReleased: {
             gameView.pressed(Qt.point(touchPoint.x, touchPoint.y))
           }
         }

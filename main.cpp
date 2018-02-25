@@ -1,8 +1,8 @@
 #include <QGuiApplication>
 #include <QQuickView>
 
-#include "gameview.h"
-#include "mainwindow.h"
+#include "GameView/gameview.h"
+#include "GameView/mainwindow.h"
 
 void registerQmlTypes()
 {
