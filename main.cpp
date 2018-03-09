@@ -2,11 +2,13 @@
 #include <QQuickView>
 
 #include "GameView/gameview.h"
+#include "GameView/gamewindow.h"
 #include "GameView/mainwindow.h"
 
 void registerQmlTypes()
 {
   qmlRegisterType<View::GameView>("GoL", 1, 0, "GameView");
+  qmlRegisterType<View::GameWindow>("GoL", 1, 0, "GameWindow");
   qmlRegisterType<View::MainWindow>("GoL", 1, 0, "MainWindow");
 }
 

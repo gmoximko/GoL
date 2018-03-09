@@ -18,32 +18,23 @@ public:
 
   QPoint fieldSize() const
   {
-    auto const cells = gameField().cells();
-    return QPoint(cells.x() * pixels_per_cell_.x(),
-                  cells.y() * pixels_per_cell_.y());
-  }
-  void setGameField(Logic::GameField* game_field)
-  {
-    game_field_ = game_field;
+    return QPoint(cells_.x() * pixels_per_cell_.x(),
+                  cells_.y() * pixels_per_cell_.y());
   }
 
+  void initialize(QPoint cells);
   void paint(QPainter* painter_ptr) override;
   Q_INVOKABLE void pressed(QPointF point);
 
 private:
-  Logic::GameField& gameField() const
-  {
-    Q_ASSERT(game_field_ != nullptr);
-    return *game_field_;
-  }
-
   void drawGrid(QPainter& painter) const;
-  void drawCoordinates(QPainter& painter) const;
   void drawSelectedCell(QPainter& painter) const;
 
   QPoint const pixels_per_cell_ = QPoint(10.0, 10.0);
-  Logic::GameField* game_field_ = nullptr;
-  QPair<QPoint, bool> selected_cell_;
+  QPoint cells_;
+
+  using MaybeCell = QPair<QPoint, bool>;
+  MaybeCell selected_cell_;
 };
 
 } // View

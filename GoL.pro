@@ -17,6 +17,7 @@ SOURCES += main.cpp \
     GameView/gameview.cpp \
     GameView/mainwindow.cpp \
     Utilities/rleparser.cpp \
+    GameView/gamewindow.cpp
 
 RESOURCES += qml.qrc \
              patterns.qrc
@@ -36,4 +37,6 @@ HEADERS += \
     GameLogic/gamelogic.h \
     GameView/gameview.h \
     GameView/mainwindow.h \
-    Utilities/rleparser.h
+    Utilities/rleparser.h \
+    GameView/gamewindow.h \
+    Utilities/qtutilities.h
