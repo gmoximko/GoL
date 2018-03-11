@@ -6,30 +6,6 @@
 
 namespace Utilities { namespace Qt {
 
-template<class T>
-class NotNullPtr
-{
-public:
-  T const& get() const
-  {
-    Q_ASSERT(ptr_ != nullptr);
-    return *ptr_;
-  }
-  T& getMutable()
-  {
-    Q_ASSERT(ptr_ != nullptr);
-    return *ptr_;
-  }
-  void set(T* ptr)
-  {
-    ptr_ = ptr;
-    Q_ASSERT(ptr_ != nullptr);
-  }
-
-private:
-  T* ptr_ = nullptr;
-};
-
 template<class T, class... Args>
 QSharedPointer<T> makeShared(Args&&... args)
 {

@@ -55,50 +55,30 @@ GameWindow {
     }
 
     ListView {
-        id: patternsList
-        visible: false
-        width: gameWindow.width
-        height: gameWindow.height * 0.3
-        delegate: Item {
-            x: 5
-            width: 80
-            height: 40
-            Row {
-                id: row1
-                Rectangle {
-                    width: 40
-                    height: 40
-                    color: colorCode
-                }
-
-                Text {
-                    text: name
-                    anchors.verticalCenter: parent.verticalCenter
-                    font.bold: true
-                }
-                spacing: 10
-            }
+      id: patternsList
+      visible: false
+      width: gameWindow.width
+      height: gameWindow.height * 0.3
+      model: gameWindow.patternCount
+      delegate: Item {
+        property var pattern: gameWindow.patternModel(index)
+        x: 5
+        width: 80
+        height: 40
+        Row {
+          id: row1
+          Text {
+            text: pattern.name
+            anchors.verticalCenter: parent.verticalCenter
+            font.bold: true
+          }
+          Text {
+            text: "scores: " + pattern.scores
+            anchors.verticalCenter: parent.verticalCenter
+            font.bold: true
+          }
+          spacing: 10
         }
-        model: ListModel {
-          ListElement {
-              name: "Grey"
-              colorCode: "grey"
-          }
-
-          ListElement {
-              name: "Red"
-              colorCode: "red"
-          }
-
-          ListElement {
-              name: "Blue"
-              colorCode: "blue"
-          }
-
-          ListElement {
-              name: "Green"
-              colorCode: "green"
-          }
       }
     }
   }

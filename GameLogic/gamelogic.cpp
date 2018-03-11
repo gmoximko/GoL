@@ -1,5 +1,5 @@
 #include "gamelogic.h"
-#include "Utilities/rleparser.h"
+#include "../Utilities/rleparser.h"
 
 namespace Logic {
 

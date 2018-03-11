@@ -5,7 +5,7 @@
 #include <QSet>
 #include <QPoint>
 
-#include "GameLogic/gamelogic.h"
+#include "../GameLogic/gamelogic.h"
 
 namespace Utilities {
 

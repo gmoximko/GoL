@@ -2,7 +2,7 @@
 #include <QQmlContext>
 #include <QScopedPointer>
 
-#include "Utilities/qtutilities.h"
+#include "../Utilities/qtutilities.h"
 #include "gamewindow.h"
 #include "mainwindow.h"
 
