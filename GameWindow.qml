@@ -47,38 +47,61 @@ GameWindow {
             ]
             onReleased: {
               gameView.pressed(Qt.point(touchPoint.x, touchPoint.y))
-              patternsList.visible = true
             }
           }
         }
       }
     }
 
-    ListView {
-      id: patternsList
-      visible: false
-      width: gameWindow.width
-      height: gameWindow.height * 0.3
-      model: gameWindow.patternCount
-      delegate: Item {
-        property var pattern: gameWindow.patternModel(index)
+    Component {
+      id: patternModel
+
+      Item {
+        property var pattern: gameWindow.patternModelAt(index)
         x: 5
-        width: 80
+        width: parent.width
         height: 40
-        Row {
-          id: row1
-          Text {
-            text: pattern.name
-            anchors.verticalCenter: parent.verticalCenter
-            font.bold: true
+        MouseArea {
+          anchors.fill: parent
+          onClicked: {
+            parent.ListView.view.currentIndex = index
+          }
+        }
+        Column {
+          Row {
+            Text {
+              text: pattern.name
+              anchors.verticalCenter: parent.verticalCenter
+              font.bold: true
+            }
+            Text {
+              text: "scores: " + pattern.scores
+              anchors.verticalCenter: parent.verticalCenter
+            }
+            spacing: 10
+            anchors.horizontalCenter: parent.horizontalCenter
           }
           Text {
-            text: "scores: " + pattern.scores
-            anchors.verticalCenter: parent.verticalCenter
-            font.bold: true
+            text: "size: " + pattern.size
           }
           spacing: 10
         }
+      }
+    }
+
+    ListView {
+      id: patternsList
+      visible: true
+      clip: true
+      focus: true
+      width: gameWindow.width
+      height: gameWindow.height * 0.3
+      model: gameWindow.patternCount
+      delegate: patternModel
+      highlight: Rectangle { color: "lightsteelblue"; radius: 5 }
+      currentIndex: -1
+      onCurrentItemChanged: {
+        gameView.currentPattern = currentItem.pattern
       }
     }
   }

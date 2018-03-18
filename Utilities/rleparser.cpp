@@ -52,7 +52,7 @@ void readPoints(QTextStream& stream, QPoint size, Logic::Points& points)
         {
           for (int x = 0; x < index; x++, cell_x++)
           {
-            QPoint unit(cell_x - 1, size.y() - 1 - cell_y - 1);
+            QPoint unit(cell_x, size.y() - cell_y - 1);
             points.push_back(unit - size / 2);
           }
         }

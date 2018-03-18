@@ -9,7 +9,7 @@ Logic::SizeT GameWindow::patternCount() const
   return game_field_->allPatterns()->patternCount();
 }
 
-QVariant GameWindow::patternModel(int idx) const
+QVariant GameWindow::patternModelAt(int idx) const
 {
   return QVariant::fromValue(PatternModel(game_field_->allPatterns()->patternAt(idx)));
 }
