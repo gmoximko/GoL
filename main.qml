@@ -51,7 +51,7 @@ MainWindow {
           clip: true
           visible: true
           anchors.fill: parent
-          currentIndex: 2
+          currentIndex: 4
           model: ListModel {
             ListElement { cells: 16 }
             ListElement { cells: 32 }

@@ -15,7 +15,6 @@ namespace {
 
 void readPoints(QTextStream& stream, QPoint size, Logic::Points& points)
 {
-  QRegExp rlife("[\\dboxy$]+!?");
   int cell_x = 0;
   int cell_y = 0;
   int index = 0;
@@ -23,9 +22,9 @@ void readPoints(QTextStream& stream, QPoint size, Logic::Points& points)
   QString line;
   while (stream.readLineInto(&line))
   {
-    if (!rlife.exactMatch(line)) continue;
+    Q_ASSERT(QRegExp("[\\dboxy$!]+").exactMatch(line));
 
-    for (QChar const c : rlife.cap())
+    for (QChar const c : line)
     {
       if (c == '!')
       {
@@ -62,6 +61,7 @@ void readPoints(QTextStream& stream, QPoint size, Logic::Points& points)
       Q_ASSERT(cell_y >= 0 && cell_y <= size.y());
     }
   }
+  Q_ASSERT(false);
 }
 
 std::tuple<QString, QPoint, Logic::Points> readPattern(QTextStream& stream)

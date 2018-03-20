@@ -32,9 +32,40 @@ GameWindow {
         PinchArea {
           id: pinchArea
           anchors.fill: parent
-          pinch.target: gameView
           pinch.maximumScale: Math.max(gameView.width / gameWindow.width, gameView.height / gameWindow.height)
           pinch.minimumScale: Math.max(gameWindow.width / gameView.width, gameWindow.height / gameView.height)
+
+          property real startScale
+          onPinchStarted: {
+            startScale = gameView.scale
+          }
+          onPinchUpdated: {
+            var scaleRatio = startScale * (pinch.scale - pinch.previousScale)
+            zoomGameView(scaleRatio, pinch.startCenter)
+          }
+          onPinchFinished: {
+            flickable.returnToBounds()
+          }
+
+          function zoomGameView(ratio, point) {
+            var newScale = gameView.scale + ratio
+            var maxScale = pinchArea.pinch.maximumScale
+            var minScale = pinchArea.pinch.minimumScale
+
+            if (newScale > maxScale) {
+              ratio = maxScale - gameView.scale
+              newScale = maxScale
+            } else if (newScale < minScale) {
+              ratio = minScale - gameView.scale
+              newScale = minScale
+            }
+            console.assert(gameView.scale + ratio <= maxScale)
+            console.assert(gameView.scale + ratio >= minScale)
+
+            gameView.scale = newScale
+            flickable.contentX += point.x * ratio
+            flickable.contentY += point.y * ratio
+          }
 
           MultiPointTouchArea {
             id: touchArea

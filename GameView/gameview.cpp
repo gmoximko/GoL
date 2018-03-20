@@ -8,7 +8,7 @@ namespace {
 
 QColor const pattern_selection_color = Qt::GlobalColor::yellow;
 QPoint const pixels_per_cell = QPoint(10.0, 10.0);
-float const life_pixels_ratio = 0.3f;
+qreal const life_pixels_ratio = 0.3;
 
 QPointF cellToPixels(QPoint cell)
 {
