@@ -1,12 +1,13 @@
 #include <QQmlContext>
 #include <QQmlEngine>
+
 #include "gamewindow.h"
 
 namespace View {
 
-Logic::SizeT GameWindow::patternCount() const
+QVariant GameWindow::currentPattern() const
 {
-  return game_field_->allPatterns()->patternCount();
+  return QVariant::fromValue(PatternModel(current_pattern_));
 }
 
 QVariant GameWindow::patternModelAt(int idx) const
@@ -16,9 +17,23 @@ QVariant GameWindow::patternModelAt(int idx) const
 
 void GameWindow::initialize(Logic::GameField& game_field)
 {
-  game_view_ = findChild<GameView*>();
   game_field_ = &game_field;
-  game_view_->initialize(game_field_->cells());
+}
+
+void GameWindow::setCurrentPattern(QVariant const& pattern_model)
+{
+  auto const model = pattern_model.value<PatternModel>();
+  Q_ASSERT(model.pattern() != nullptr);
+  if (current_pattern_ != model.pattern())
+  {
+    current_pattern_ = model.pattern();
+    emit currentPatternChanged();
+  }
+}
+
+void GameWindow::pressed(QPointF point)
+{
+  selected_cell_ = qMakePair(QPoint(point.x(), point.y()), true);
 }
 
 } // View

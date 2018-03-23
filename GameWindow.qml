@@ -32,7 +32,9 @@ GameWindow {
         PinchArea {
           id: pinchArea
           anchors.fill: parent
-          pinch.maximumScale: Math.max(gameView.width / gameWindow.width, gameView.height / gameWindow.height)
+          property int minCellsInScreen: 10
+          pinch.maximumScale: Math.min(gameWindow.width / (gameView.pixelsPerCell.x * minCellsInScreen),
+                                       gameWindow.height / (gameView.pixelsPerCell.y * minCellsInScreen))
           pinch.minimumScale: Math.max(gameWindow.width / gameView.width, gameWindow.height / gameView.height)
 
           property real startScale
@@ -51,6 +53,7 @@ GameWindow {
             var newScale = gameView.scale + ratio
             var maxScale = pinchArea.pinch.maximumScale
             var minScale = pinchArea.pinch.minimumScale
+            console.assert(minScale < maxScale, minScale, maxScale)
 
             if (newScale > maxScale) {
               ratio = maxScale - gameView.scale
@@ -59,8 +62,8 @@ GameWindow {
               ratio = minScale - gameView.scale
               newScale = minScale
             }
-            console.assert(gameView.scale + ratio <= maxScale)
-            console.assert(gameView.scale + ratio >= minScale)
+            console.assert(gameView.scale + ratio <= maxScale, gameView.scale + ratio)
+            console.assert(gameView.scale + ratio >= minScale, gameView.scale + ratio)
 
             gameView.scale = newScale
             flickable.contentX += point.x * ratio
@@ -77,7 +80,7 @@ GameWindow {
               TouchPoint { id: touchPoint }
             ]
             onReleased: {
-              gameView.pressed(Qt.point(touchPoint.x, touchPoint.y))
+              selectCell(touchPoint)
             }
           }
         }
@@ -132,8 +135,15 @@ GameWindow {
       highlight: Rectangle { color: "lightsteelblue"; radius: 5 }
       currentIndex: -1
       onCurrentItemChanged: {
-        gameView.currentPattern = currentItem.pattern
+        gameWindow.currentPattern = currentItem.pattern
+        gameView.update()
       }
     }
+  }
+
+  function selectCell(point) {
+    gameWindow.pressed(Qt.point(point.x / gameView.pixelsPerCell.x,
+                                point.y / gameView.pixelsPerCell.y))
+    gameView.update()
   }
 }

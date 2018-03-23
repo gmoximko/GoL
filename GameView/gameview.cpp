@@ -1,14 +1,15 @@
 #include <QPainter>
 
+#include "gamewindow.h"
 #include "gameview.h"
 
 namespace View {
 
 namespace {
 
-QColor const pattern_selection_color = Qt::GlobalColor::yellow;
-QPoint const pixels_per_cell = QPoint(10.0, 10.0);
-qreal const life_pixels_ratio = 0.3;
+constexpr Qt::GlobalColor pattern_selection_color = Qt::GlobalColor::yellow;
+constexpr QPoint pixels_per_cell = QPoint(10.0, 10.0);
+constexpr qreal life_pixels_ratio = 0.3;
 
 QPointF cellToPixels(QPoint cell)
 {
@@ -17,32 +18,20 @@ QPointF cellToPixels(QPoint cell)
 
 } // namespace
 
+QPointF GameView::pixelsPerCell() const
+{
+  return pixels_per_cell;
+}
+
 QPoint GameView::fieldSize() const
 {
-  return QPoint(cells_.x() * pixels_per_cell.x(),
-                cells_.y() * pixels_per_cell.y());
+  return QPoint(cells().x() * pixels_per_cell.x(),
+                cells().y() * pixels_per_cell.y());
 }
 
-QVariant GameView::currentPattern() const
+void GameView::initialize(GameWindow& game_window)
 {
-  return QVariant::fromValue(PatternModel(current_pattern_));
-}
-
-void GameView::initialize(QPoint cells)
-{
-  cells_ = cells;
-}
-
-void GameView::setCurrentPattern(QVariant const& pattern_model)
-{
-  auto const model = pattern_model.value<PatternModel>();
-  Q_ASSERT(model.pattern() != nullptr);
-  if (current_pattern_ != model.pattern())
-  {
-    current_pattern_ = model.pattern();
-    emit currentPatternChanged();
-    update();
-  }
+  game_window_ = &game_window;
 }
 
 void GameView::paint(QPainter* painter_ptr)
@@ -55,22 +44,20 @@ void GameView::paint(QPainter* painter_ptr)
   drawSelectedCell(painter);
 }
 
-void GameView::pressed(QPointF point)
+QPoint GameView::cells() const
 {
-  selected_cell_ = qMakePair(QPoint(point.x() / pixels_per_cell.x(),
-                                    point.y() / pixels_per_cell.y()), true);
-  update();
+  return game_window_->cells();
 }
 
 void GameView::drawGrid(QPainter& painter) const
 {
   QPoint const field_size = fieldSize();
-  for (int x = 0; x <= cells_.x(); ++x)
+  for (int x = 0; x <= cells().x(); ++x)
   {
     int line_x = x * pixels_per_cell.x();
     painter.drawLine(line_x, 0, line_x, field_size.y());
   }
-  for (int y = 0; y <= cells_.y(); ++y)
+  for (int y = 0; y <= cells().y(); ++y)
   {
     int line_y = y * pixels_per_cell.y();
     painter.drawLine(0, line_y, field_size.x(), line_y);
@@ -79,11 +66,12 @@ void GameView::drawGrid(QPainter& painter) const
 
 void GameView::drawSelectedCell(QPainter& painter) const
 {
-  if (!selected_cell_.second)
+  if (!game_window_->selectedCell().second)
   {
     return;
   }
-  auto const cell = selected_cell_.first;
+  auto const cell = game_window_->selectedCell().first;
+  auto const current_pattern_ = game_window_->currentPatternPtr();
 
   if (current_pattern_ == nullptr)
   {

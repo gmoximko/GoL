@@ -51,13 +51,13 @@ MainWindow {
           clip: true
           visible: true
           anchors.fill: parent
-          currentIndex: 4
+          currentIndex: 3
           model: ListModel {
-            ListElement { cells: 16 }
             ListElement { cells: 32 }
             ListElement { cells: 64 }
             ListElement { cells: 128 }
             ListElement { cells: 256 }
+            ListElement { cells: 512 }
           }
         }
 
