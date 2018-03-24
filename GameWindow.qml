@@ -38,15 +38,29 @@ GameWindow {
           pinch.minimumScale: Math.max(gameWindow.width / gameView.width, gameWindow.height / gameView.height)
 
           property real startScale
+          property real deltaAngle
+          property real sensitivity: 5
           onPinchStarted: {
             startScale = gameView.scale
+            deltaAngle = 0
           }
           onPinchUpdated: {
             var scaleRatio = startScale * (pinch.scale - pinch.previousScale)
             zoomGameView(scaleRatio, pinch.startCenter)
+
+            var rotationRatio = sensitivity * (pinch.angle - pinch.previousAngle)
+            rotatePattern(rotationRatio)
           }
           onPinchFinished: {
             flickable.returnToBounds()
+          }
+
+          function rotatePattern(delta) {
+            deltaAngle += delta
+            if (Math.abs(deltaAngle) >= 90) {
+              gameView.rotatePattern(deltaAngle > 0 ? 90 : -90)
+              deltaAngle = 0
+            }
           }
 
           function zoomGameView(ratio, point) {
@@ -141,7 +155,6 @@ GameWindow {
   }
 
   function selectCell(point) {
-    gameView.pressed(Qt.point(point.x / gameView.pixelsPerCell.x,
-                              point.y / gameView.pixelsPerCell.y))
+    gameView.pressed(Qt.point(point.x, point.y))
   }
 }

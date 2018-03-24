@@ -3,6 +3,7 @@
 
 #include <QQuickPaintedItem>
 #include <QPoint>
+#include <QMatrix>
 
 #include "../GameLogic/gamelogic.h"
 
@@ -60,18 +61,18 @@ public:
   void setCurrentPattern(QVariant const& pattern_model);
   void paint(QPainter* painter_ptr) override;
   Q_INVOKABLE void pressed(QPointF point);
+  Q_INVOKABLE void rotatePattern(qreal angle);
 
 signals:
   void currentPatternChanged();
 
 private:
+  using MaybePatternTrs = QPair<QMatrix, bool>;
   void drawGrid(QPainter& painter) const;
   void drawSelectedCell(QPainter& painter) const;
 
   QPoint cells_;
-
-  using MaybeCell = QPair<QPoint, bool>;
-  MaybeCell selected_cell_;
+  MaybePatternTrs pattern_trs_;
   Logic::PatternPtr current_pattern_;
 };
 

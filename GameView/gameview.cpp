@@ -62,7 +62,25 @@ void GameView::paint(QPainter* painter_ptr)
 
 void GameView::pressed(QPointF point)
 {
-  selected_cell_ = qMakePair(QPoint(point.x(), point.y()), true);
+  QPoint cell(point.x() / pixels_per_cell.x(),
+              point.y() / pixels_per_cell.y());
+
+  auto& trs = pattern_trs_.first;
+  QMatrix tmp;
+  tmp.translate(cell.x() - trs.dx(), cell.y() - trs.dy());
+  trs *= tmp;
+  pattern_trs_.second = true;
+  update();
+}
+
+void GameView::rotatePattern(qreal angle)
+{
+  if (!pattern_trs_.second)
+  {
+    return;
+  }
+  auto& trs = pattern_trs_.first;
+  trs.rotate(angle);
   update();
 }
 
@@ -83,14 +101,15 @@ void GameView::drawGrid(QPainter& painter) const
 
 void GameView::drawSelectedCell(QPainter& painter) const
 {
-  if (!selected_cell_.second)
+  if (!pattern_trs_.second)
   {
     return;
   }
-  auto const cell = selected_cell_.first;
+  auto const& trs = pattern_trs_.first;
 
   if (current_pattern_ == nullptr)
   {
+    auto const cell = QPoint(trs.dx(), trs.dy());
     QRectF rect(cellToPixels(cell), QSizeF(pixels_per_cell.x(), pixels_per_cell.y()));
     painter.fillRect(rect, QBrush(pattern_selection_color));
   }
@@ -99,7 +118,7 @@ void GameView::drawSelectedCell(QPainter& painter) const
     painter.setBrush(QBrush(pattern_selection_color));
     for (auto const& point : current_pattern_->points())
     {
-      auto const center = cellToPixels(cell + point) + pixels_per_cell / 2.0f;
+      auto const center = cellToPixels(point * trs) + pixels_per_cell / 2.0f;
       auto const radius = pixels_per_cell * life_pixels_ratio;
       painter.drawEllipse(center, radius.x(), radius.y());
     }
