@@ -135,15 +135,13 @@ GameWindow {
       highlight: Rectangle { color: "lightsteelblue"; radius: 5 }
       currentIndex: -1
       onCurrentItemChanged: {
-        gameWindow.currentPattern = currentItem.pattern
-        gameView.update()
+        gameView.currentPattern = currentItem.pattern
       }
     }
   }
 
   function selectCell(point) {
-    gameWindow.pressed(Qt.point(point.x / gameView.pixelsPerCell.x,
-                                point.y / gameView.pixelsPerCell.y))
-    gameView.update()
+    gameView.pressed(Qt.point(point.x / gameView.pixelsPerCell.x,
+                              point.y / gameView.pixelsPerCell.y))
   }
 }
