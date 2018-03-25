@@ -19,6 +19,9 @@ public:
   Q_INVOKABLE QVariant patternModelAt(int idx) const;
   void initialize(Logic::GameField& game_field);
 
+private slots:
+  void addPattern(PatternTRS pattern_trs);
+
 private:
   GameView* game_view_ = nullptr;
   Logic::GameField* game_field_ = nullptr;

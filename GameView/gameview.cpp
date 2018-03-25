@@ -30,7 +30,9 @@ QPoint GameView::fieldSize() const
 
 QVariant GameView::currentPattern() const
 {
-  return QVariant::fromValue(PatternModel(current_pattern_));
+  return current_pattern_ == nullptr
+      ? QVariant()
+      : QVariant::fromValue(PatternModel(current_pattern_));
 }
 
 void GameView::initialize(QPoint cells)
@@ -65,22 +67,35 @@ void GameView::pressed(QPointF point)
   QPoint cell(point.x() / pixels_per_cell.x(),
               point.y() / pixels_per_cell.y());
 
-  auto& trs = pattern_trs_.first;
+  pattern_trs_.first = true;
+  auto& trs = pattern_trs_.second;
   QMatrix tmp;
   tmp.translate(cell.x() - trs.dx(), cell.y() - trs.dy());
   trs *= tmp;
-  pattern_trs_.second = true;
   update();
 }
 
 void GameView::rotatePattern(qreal angle)
 {
-  if (!pattern_trs_.second)
+  if (!pattern_trs_.first)
   {
     return;
   }
-  auto& trs = pattern_trs_.first;
+  auto& trs = pattern_trs_.second;
   trs.rotate(angle);
+  update();
+}
+
+void GameView::selectPattern()
+{
+  Q_ASSERT(pattern_trs_.first);
+  Q_ASSERT(current_pattern_ != nullptr);
+  auto& trs = pattern_trs_.second;
+  emit patternSelected(qMakePair(current_pattern_, trs));
+
+  pattern_trs_.first = false;
+  trs.reset();
+  current_pattern_ = nullptr;
   update();
 }
 
@@ -101,11 +116,11 @@ void GameView::drawGrid(QPainter& painter) const
 
 void GameView::drawSelectedCell(QPainter& painter) const
 {
-  if (!pattern_trs_.second)
+  if (!pattern_trs_.first)
   {
     return;
   }
-  auto const& trs = pattern_trs_.first;
+  auto const& trs = pattern_trs_.second;
 
   if (current_pattern_ == nullptr)
   {
@@ -118,7 +133,7 @@ void GameView::drawSelectedCell(QPainter& painter) const
     painter.setBrush(QBrush(pattern_selection_color));
     for (auto const& point : current_pattern_->points())
     {
-      auto const center = cellToPixels(point * trs) + pixels_per_cell / 2.0f;
+      auto const center = cellToPixels(point * trs) + pixels_per_cell / 2.0;
       auto const radius = pixels_per_cell * life_pixels_ratio;
       painter.drawEllipse(center, radius.x(), radius.y());
     }

@@ -84,19 +84,47 @@ GameWindow {
             flickable.contentY += point.y * ratio
           }
 
+          MouseArea {
+            id: mouseArea
+            anchors.fill: parent
+            scrollGestureEnabled: false
+            acceptedButtons: { Qt.LeftButton | Qt.RightButton }
+
+            onWheel: {
+              var scaleRatio = gameView.scale * wheel.angleDelta.y / 120 / 10
+              pinchArea.zoomGameView(scaleRatio * (wheel.inverted ? -1 : 1), Qt.point(wheel.x, wheel.y))
+            }
+            onClicked: {
+              gameView.selectCell(Qt.point(mouse.x, mouse.y))
+            }
+            onDoubleClicked: {
+              if (gameView.currentPattern !== undefined) {
+                gameView.selectPattern()
+                patternsList.hide()
+                mouse.accepted = false
+              }
+            }
+          }
+
           MultiPointTouchArea {
             id: touchArea
             anchors.fill: parent
-            mouseEnabled: true
+            mouseEnabled: false
             minimumTouchPoints: 1
-            maximumTouchPoints: 1
+            maximumTouchPoints: 2
             touchPoints: [
-              TouchPoint { id: touchPoint }
+              TouchPoint { id: touchPoint1 },
+              TouchPoint { id: touchPoint2 }
             ]
             onReleased: {
-              selectCell(touchPoint)
+              gameView.selectCell(touchPoint1)
             }
           }
+        }
+
+        function selectCell(point) {
+          gameView.pressed(Qt.point(point.x, point.y))
+          patternsList.show()
         }
       }
     }
@@ -139,7 +167,7 @@ GameWindow {
 
     ListView {
       id: patternsList
-      visible: true
+      visible: false
       clip: true
       focus: true
       width: gameWindow.width
@@ -149,12 +177,18 @@ GameWindow {
       highlight: Rectangle { color: "lightsteelblue"; radius: 5 }
       currentIndex: -1
       onCurrentItemChanged: {
-        gameView.currentPattern = currentItem.pattern
+        if (currentIndex >= 0) {
+          gameView.currentPattern = currentItem.pattern
+        }
+      }
+
+      function show() {
+        visible = true
+      }
+      function hide() {
+        visible = false
+        currentIndex = -1
       }
     }
-  }
-
-  function selectCell(point) {
-    gameView.pressed(Qt.point(point.x, point.y))
   }
 }

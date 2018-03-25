@@ -43,6 +43,8 @@ private:
   Logic::PatternPtr pattern_ptr_;
 };
 
+using PatternTRS = QPair<Logic::PatternPtr, QMatrix> const;
+
 class GameView : public QQuickPaintedItem
 {
   Q_OBJECT
@@ -62,17 +64,19 @@ public:
   void paint(QPainter* painter_ptr) override;
   Q_INVOKABLE void pressed(QPointF point);
   Q_INVOKABLE void rotatePattern(qreal angle);
+  Q_INVOKABLE void selectPattern();
 
 signals:
   void currentPatternChanged();
+  void patternSelected(PatternTRS pattern_trs);
 
 private:
-  using MaybePatternTrs = QPair<QMatrix, bool>;
+  using MaybeTRS = QPair<bool, QMatrix>;
   void drawGrid(QPainter& painter) const;
   void drawSelectedCell(QPainter& painter) const;
 
   QPoint cells_;
-  MaybePatternTrs pattern_trs_;
+  MaybeTRS pattern_trs_;
   Logic::PatternPtr current_pattern_;
 };
 
