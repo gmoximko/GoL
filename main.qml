@@ -65,7 +65,7 @@ MainWindow {
           height: 70
           text: qsTr("Create")
           onPressed: {
-            createGame(Qt.point(comboBox.currentText, comboBox.currentText))
+            createGameInstance(Qt.point(comboBox.currentText, comboBox.currentText))
           }
         }
       }
@@ -82,8 +82,9 @@ MainWindow {
     }
   }
 
-  function createGame(cells) {
-    createGameInstance(cells)
+  function createGameInstance(cells) {
+    mainWindow.cells = cells
+    mainWindow.createGame()
     mainMenu.enabled = false
     mainMenu.visible = false
   }

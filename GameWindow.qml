@@ -3,7 +3,7 @@ import QtQuick.Window 2.10
 import QtSensors 5.9
 import GoL 1.0
 
-GameWindow {
+Item {
   id: gameWindow
   width: Window.width
   height: Window.height
@@ -25,28 +25,52 @@ GameWindow {
         width: fieldSize.x
         height: fieldSize.y
         fillColor: "#000000"
-        scale: pinchArea.pinch.maximumScale
+        scale: maxScale
         anchors.verticalCenter: parent.verticalCenter
         anchors.horizontalCenter: parent.horizontalCenter
+
+        function selectCell(point) {
+          pressed(Qt.point(point.x, point.y))
+          patternsList.show()
+        }
+
+        property int minCellsInScreen: 10
+        property real maxScale: Math.min(gameWindow.width / (pixelsPerCell.x * minCellsInScreen),
+                                         gameWindow.height / (pixelsPerCell.y * minCellsInScreen))
+        property real minScale: Math.max(gameWindow.width / width, gameWindow.height / height)
+        function zoom(ratio, point) {
+          var newScale = scale + ratio
+          console.assert(minScale < maxScale, minScale, maxScale)
+
+          if (newScale > maxScale) {
+            ratio = maxScale - scale
+            newScale = maxScale
+          } else if (newScale < minScale) {
+            ratio = minScale - scale
+            newScale = minScale
+          }
+          console.assert(scale + ratio <= maxScale, scale + ratio)
+          console.assert(scale + ratio >= minScale, scale + ratio)
+
+          scale = newScale
+          flickable.contentX += point.x * ratio
+          flickable.contentY += point.y * ratio
+        }
 
         PinchArea {
           id: pinchArea
           anchors.fill: parent
-          property int minCellsInScreen: 10
-          pinch.maximumScale: Math.min(gameWindow.width / (gameView.pixelsPerCell.x * minCellsInScreen),
-                                       gameWindow.height / (gameView.pixelsPerCell.y * minCellsInScreen))
-          pinch.minimumScale: Math.max(gameWindow.width / gameView.width, gameWindow.height / gameView.height)
 
           property real startScale
-          property real deltaAngle
           property real sensitivity: 5
+
           onPinchStarted: {
             startScale = gameView.scale
             deltaAngle = 0
           }
           onPinchUpdated: {
             var scaleRatio = startScale * (pinch.scale - pinch.previousScale)
-            zoomGameView(scaleRatio, pinch.startCenter)
+            gameView.zoom(scaleRatio, pinch.startCenter)
 
             var rotationRatio = sensitivity * (pinch.angle - pinch.previousAngle)
             rotatePattern(rotationRatio)
@@ -55,33 +79,13 @@ GameWindow {
             flickable.returnToBounds()
           }
 
+          property real deltaAngle
           function rotatePattern(delta) {
             deltaAngle += delta
             if (Math.abs(deltaAngle) >= 90) {
               gameView.rotatePattern(deltaAngle > 0 ? 90 : -90)
               deltaAngle = 0
             }
-          }
-
-          function zoomGameView(ratio, point) {
-            var newScale = gameView.scale + ratio
-            var maxScale = pinchArea.pinch.maximumScale
-            var minScale = pinchArea.pinch.minimumScale
-            console.assert(minScale < maxScale, minScale, maxScale)
-
-            if (newScale > maxScale) {
-              ratio = maxScale - gameView.scale
-              newScale = maxScale
-            } else if (newScale < minScale) {
-              ratio = minScale - gameView.scale
-              newScale = minScale
-            }
-            console.assert(gameView.scale + ratio <= maxScale, gameView.scale + ratio)
-            console.assert(gameView.scale + ratio >= minScale, gameView.scale + ratio)
-
-            gameView.scale = newScale
-            flickable.contentX += point.x * ratio
-            flickable.contentY += point.y * ratio
           }
 
           MouseArea {
@@ -92,12 +96,12 @@ GameWindow {
 
             onWheel: {
               var scaleRatio = gameView.scale * wheel.angleDelta.y / 120 / 10
-              pinchArea.zoomGameView(scaleRatio * (wheel.inverted ? -1 : 1), Qt.point(wheel.x, wheel.y))
-            }
-            onClicked: {
-              gameView.selectCell(Qt.point(mouse.x, mouse.y))
+              gameView.zoom(scaleRatio * (wheel.inverted ? -1 : 1), Qt.point(wheel.x, wheel.y))
             }
             onDoubleClicked: {
+              gameView.selectCell(Qt.point(mouse.x, mouse.y))
+            }
+            onPressAndHold: {
               if (gameView.currentPattern !== undefined) {
                 gameView.selectPattern()
                 patternsList.hide()
@@ -121,11 +125,6 @@ GameWindow {
             }
           }
         }
-
-        function selectCell(point) {
-          gameView.pressed(Qt.point(point.x, point.y))
-          patternsList.show()
-        }
       }
     }
 
@@ -133,7 +132,7 @@ GameWindow {
       id: patternModel
 
       Item {
-        property var pattern: gameWindow.patternModelAt(index)
+        property var pattern: gameView.patternModelAt(index)
         x: 5
         width: parent.width
         height: 40
@@ -172,7 +171,7 @@ GameWindow {
       focus: true
       width: gameWindow.width
       height: gameWindow.height * 0.3
-      model: gameWindow.patternCount
+      model: gameView.patternCount
       delegate: patternModel
       highlight: Rectangle { color: "lightsteelblue"; radius: 5 }
       currentIndex: -1

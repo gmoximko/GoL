@@ -3,20 +3,32 @@
 
 #include <QQuickItem>
 
-#include "../GameLogic/gamelogic.h"
+#include "../GameLogic/gamemodel.h"
+#include "../GameLogic/gamecontroller.h"
+#include "gameview.h"
 
 namespace View {
 
 class MainWindow : public QQuickItem
 {
   Q_OBJECT
+  Q_PROPERTY(QPoint cells MEMBER cells_)
 
 public:
   using QQuickItem::QQuickItem;
-  Q_INVOKABLE void createGameInstance(QPoint cells);
+  Q_INVOKABLE void createGame();
 
 private:
-  Logic::GameFieldPtr game_field_;
+  void createGameModel();
+  void createGameController();
+  void createGameView();
+
+  Logic::GameModelMutablePtr game_model_;
+  Logic::GameControllerPtr game_controller_;
+  View::GameViewPtr game_view_;
+
+  // Game parameters
+  QPoint cells_;
 };
 
 }

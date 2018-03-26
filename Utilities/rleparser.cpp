@@ -169,7 +169,7 @@ private:
 
 } // namespace
 
-Logic::PatternsPtr preparePatterns()
+Logic::PatternsPtr createPatterns()
 {
   return Qt::makeShared<PatternsImpl>(":/Patterns/Patterns");
 }

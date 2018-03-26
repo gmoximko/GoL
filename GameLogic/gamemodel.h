@@ -1,11 +1,12 @@
-#ifndef GAMELOGIC_H
-#define GAMELOGIC_H
+#ifndef GAMEMODEL_H
+#define GAMEMODEL_H
 
 #include <memory>
 #include <QSharedPointer>
 #include <QPoint>
 #include <QSet>
 #include <QVector>
+#include <QMatrix>
 
 namespace Logic {
 
@@ -21,6 +22,7 @@ struct Pattern
   virtual SizeT scores() const = 0;
 };
 using PatternPtr = QSharedPointer<Pattern const>;
+using PatternTrs = QPair<PatternPtr, QMatrix>;
 
 struct Patterns
 {
@@ -30,25 +32,27 @@ struct Patterns
 };
 using PatternsPtr = QSharedPointer<Patterns const>;
 
-class GameField
+using LifeUnit = QPoint;
+using LifeUnits = QVector<LifeUnit>;
+
+struct GameModel
 {
-public:
   struct Params
   {
     QPoint cells_;
   };
 
-  explicit GameField(Params const& params);
+  virtual ~GameModel() = default;
+  virtual QPoint cells() const = 0;
+  virtual PatternsPtr const& allPatterns() const = 0;
+  virtual LifeUnits const& lifeUnits() const = 0;
 
-  QPoint cells() const { return cells_; }
-  PatternsPtr const& allPatterns() const { return all_patterns_; }
-
-private:
-  QPoint const cells_;
-  PatternsPtr const all_patterns_;
+  virtual void addUnit(LifeUnit const& life_unit) = 0;
 };
-using GameFieldPtr = std::unique_ptr<GameField>;
+using GameModelPtr = QSharedPointer<GameModel const>;
+using GameModelMutablePtr = QSharedPointer<GameModel>;
+GameModelMutablePtr createGameModel(GameModel::Params const& params);
 
 } // Logic
 
-#endif // GAMELOGIC_H
+#endif // GAMEMODEL_H

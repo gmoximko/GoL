@@ -1,11 +1,12 @@
-#ifndef GAMEFIELD_H
-#define GAMEFIELD_H
+#ifndef GAMEVIEW_H
+#define GAMEVIEW_H
 
 #include <QQuickPaintedItem>
 #include <QPoint>
 #include <QMatrix>
+#include <QPointer>
 
-#include "../GameLogic/gamelogic.h"
+#include "../GameLogic/gamemodel.h"
 
 namespace View {
 
@@ -43,14 +44,13 @@ private:
   Logic::PatternPtr pattern_ptr_;
 };
 
-using PatternTRS = QPair<Logic::PatternPtr, QMatrix> const;
-
 class GameView : public QQuickPaintedItem
 {
   Q_OBJECT
   Q_PROPERTY(QPointF pixelsPerCell READ pixelsPerCell CONSTANT)
   Q_PROPERTY(QPoint fieldSize READ fieldSize CONSTANT)
   Q_PROPERTY(QVariant currentPattern READ currentPattern WRITE setCurrentPattern NOTIFY currentPatternChanged)
+  Q_PROPERTY(int patternCount READ patternCount CONSTANT)
 
 public:
   using QQuickPaintedItem::QQuickPaintedItem;
@@ -58,30 +58,35 @@ public:
   QPointF pixelsPerCell() const;
   QPoint fieldSize() const;
   QVariant currentPattern() const;
+  Logic::SizeT patternCount() const;
+  QPoint fieldCells() const;
 
-  void initialize(QPoint cells);
+  void initialize(Logic::GameModelPtr const game_model);
   void setCurrentPattern(QVariant const& pattern_model);
   void paint(QPainter* painter_ptr) override;
+
+  Q_INVOKABLE QVariant patternModelAt(int idx) const;
   Q_INVOKABLE void pressed(QPointF point);
   Q_INVOKABLE void rotatePattern(qreal angle);
   Q_INVOKABLE void selectPattern();
 
 signals:
   void currentPatternChanged();
-  void patternSelected(PatternTRS pattern_trs);
+  void patternSelected(Logic::PatternTrs pattern_trs);
 
 private:
   using MaybeTRS = QPair<bool, QMatrix>;
   void drawGrid(QPainter& painter) const;
   void drawSelectedCell(QPainter& painter) const;
 
-  QPoint cells_;
   MaybeTRS pattern_trs_;
   Logic::PatternPtr current_pattern_;
+  Logic::GameModelPtr game_model_;
 };
+using GameViewPtr = QPointer<GameView>;
 
 } // View
 
 Q_DECLARE_METATYPE(View::PatternModel)
 
-#endif // GAMEFIELD_H
+#endif // GAMEVIEW_H

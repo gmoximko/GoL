@@ -5,11 +5,11 @@
 #include <QSet>
 #include <QPoint>
 
-#include "../GameLogic/gamelogic.h"
+#include "../GameLogic/gamemodel.h"
 
 namespace Utilities {
 
-Logic::PatternsPtr preparePatterns();
+Logic::PatternsPtr createPatterns();
 
 } // Utilities
 

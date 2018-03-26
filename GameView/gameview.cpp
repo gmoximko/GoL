@@ -24,8 +24,8 @@ QPointF GameView::pixelsPerCell() const
 
 QPoint GameView::fieldSize() const
 {
-  return QPoint(cells_.x() * pixels_per_cell.x(),
-                cells_.y() * pixels_per_cell.y());
+  return QPoint(fieldCells().x() * pixels_per_cell.x(),
+                fieldCells().y() * pixels_per_cell.y());
 }
 
 QVariant GameView::currentPattern() const
@@ -35,9 +35,19 @@ QVariant GameView::currentPattern() const
       : QVariant::fromValue(PatternModel(current_pattern_));
 }
 
-void GameView::initialize(QPoint cells)
+Logic::SizeT GameView::patternCount() const
 {
-  cells_ = cells;
+  return game_model_->allPatterns()->patternCount();
+}
+
+QPoint GameView::fieldCells() const
+{
+  return game_model_->cells();
+}
+
+void GameView::initialize(Logic::GameModelPtr const game_model)
+{
+  game_model_ = game_model;
 }
 
 void GameView::setCurrentPattern(QVariant const& pattern_model)
@@ -60,6 +70,11 @@ void GameView::paint(QPainter* painter_ptr)
 
   drawGrid(painter);
   drawSelectedCell(painter);
+}
+
+QVariant GameView::patternModelAt(int idx) const
+{
+  return QVariant::fromValue(PatternModel(game_model_->allPatterns()->patternAt(idx)));
 }
 
 void GameView::pressed(QPointF point)
@@ -90,24 +105,23 @@ void GameView::selectPattern()
 {
   Q_ASSERT(pattern_trs_.first);
   Q_ASSERT(current_pattern_ != nullptr);
-  auto& trs = pattern_trs_.second;
-  emit patternSelected(qMakePair(current_pattern_, trs));
 
-  pattern_trs_.first = false;
-  trs.reset();
+  emit patternSelected(qMakePair(current_pattern_, std::move(pattern_trs_.second)));
+  pattern_trs_ = qMakePair(false, QMatrix());
   current_pattern_ = nullptr;
   update();
 }
 
 void GameView::drawGrid(QPainter& painter) const
 {
-  QPoint const field_size = fieldSize();
-  for (int x = 0; x <= cells_.x(); ++x)
+  auto const field_size = fieldSize();
+  auto const cells = fieldCells();
+  for (int x = 0; x <= cells.x(); ++x)
   {
     int line_x = x * pixels_per_cell.x();
     painter.drawLine(line_x, 0, line_x, field_size.y());
   }
-  for (int y = 0; y <= cells_.y(); ++y)
+  for (int y = 0; y <= cells.y(); ++y)
   {
     int line_y = y * pixels_per_cell.y();
     painter.drawLine(0, line_y, field_size.x(), line_y);

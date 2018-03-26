@@ -13,11 +13,11 @@ DEFINES += QT_DEPRECATED_WARNINGS
 #DEFINES += QT_DISABLE_DEPRECATED_BEFORE=0x060000    # disables all the APIs deprecated before Qt 6.0.0
 
 SOURCES += main.cpp \
-    GameLogic/gamelogic.cpp \
     GameView/gameview.cpp \
     GameView/mainwindow.cpp \
     Utilities/rleparser.cpp \
-    GameView/gamewindow.cpp
+    GameLogic/gamecontroller.cpp \
+    GameLogic/gamemodel.cpp
 
 RESOURCES += qml.qrc \
              patterns.qrc
@@ -34,9 +34,9 @@ else: unix:!android: target.path = /opt/$${TARGET}/bin
 !isEmpty(target.path): INSTALLS += target
 
 HEADERS += \
-    GameLogic/gamelogic.h \
     GameView/gameview.h \
     GameView/mainwindow.h \
     Utilities/rleparser.h \
-    GameView/gamewindow.h \
-    Utilities/qtutilities.h
+    Utilities/qtutilities.h \
+    GameLogic/gamecontroller.h \
+    GameLogic/gamemodel.h

@@ -3,26 +3,43 @@
 #include <QScopedPointer>
 
 #include "../Utilities/qtutilities.h"
-#include "gamewindow.h"
 #include "mainwindow.h"
 
 namespace View {
 
-void MainWindow::createGameInstance(QPoint cells)
+void MainWindow::createGame()
 {
-  Logic::GameField::Params params;
-  params.cells_ = cells;
-  game_field_ = std::make_unique<Logic::GameField>(params);
+  createGameModel();
+  createGameView();
+  createGameController();
 
+  connect(game_view_.data(), &GameView::patternSelected,
+          [this](auto const pattern_trs){ game_controller_->addPattern(pattern_trs); });
+}
+
+void MainWindow::createGameModel()
+{
+  game_model_ = Logic::createGameModel({ cells_ });
+}
+
+void MainWindow::createGameController()
+{
+  Q_ASSERT(game_model_ != nullptr);
+  game_controller_ = Logic::createGameController({ game_model_ });
+}
+
+void MainWindow::createGameView()
+{
   QQmlEngine* engine = qmlEngine(this);
   QQmlComponent component(engine, QUrl(QStringLiteral("qrc:/GameWindow.qml")));
   auto* object = qobject_cast<QQuickItem*>(component.beginCreate(qmlContext(this)));
   object->setParentItem(this);
   object->setParent(this);
 
-  auto* game_window = qobject_cast<GameWindow*>(object);
-  Q_ASSERT(game_window != nullptr);
-  game_window->initialize(*game_field_);
+  game_view_ = object->findChild<GameView*>();
+  Q_ASSERT(game_view_ != nullptr);
+  Q_ASSERT(game_model_ != nullptr);
+  game_view_->initialize(game_model_);
 
   component.completeCreate();
 }
