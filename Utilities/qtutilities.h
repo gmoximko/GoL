@@ -3,6 +3,7 @@
 
 #include <QSharedPointer>
 #include <QException>
+#include <QPoint>
 
 namespace Utilities { namespace Qt {
 

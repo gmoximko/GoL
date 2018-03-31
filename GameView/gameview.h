@@ -61,7 +61,7 @@ public:
   Logic::SizeT patternCount() const;
   QPoint fieldCells() const;
 
-  void initialize(Logic::GameModelPtr const game_model);
+  void initialize(Logic::GameModelPtr game_model);
   void setCurrentPattern(QVariant const& pattern_model);
   void paint(QPainter* painter_ptr) override;
 
@@ -77,7 +77,9 @@ signals:
 private:
   using MaybeTRS = QPair<bool, QMatrix>;
   void drawGrid(QPainter& painter) const;
+  void drawLifeCells(QPainter& painter) const;
   void drawSelectedCell(QPainter& painter) const;
+  void drawFilledCircle(QPainter& painer, QPoint cell) const;
 
   MaybeTRS pattern_trs_;
   Logic::PatternPtr current_pattern_;

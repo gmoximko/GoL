@@ -14,7 +14,11 @@ void MainWindow::createGame()
   createGameController();
 
   connect(game_view_.data(), &GameView::patternSelected,
-          [this](auto const pattern_trs){ game_controller_->addPattern(pattern_trs); });
+          game_controller_.data(), &Logic::GameController::addPattern);
+  connect(game_controller_.data(), &Logic::GameController::onStepMade, [this]
+  {
+    game_view_->update();
+  });
 }
 
 void MainWindow::createGameModel()
@@ -25,7 +29,7 @@ void MainWindow::createGameModel()
 void MainWindow::createGameController()
 {
   Q_ASSERT(game_model_ != nullptr);
-  game_controller_ = Logic::createGameController({ game_model_ });
+  game_controller_ = Logic::createGameController(this, { game_model_ });
 }
 
 void MainWindow::createGameView()

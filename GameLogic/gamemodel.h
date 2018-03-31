@@ -33,7 +33,7 @@ struct Patterns
 using PatternsPtr = QSharedPointer<Patterns const>;
 
 using LifeUnit = QPoint;
-using LifeUnits = QVector<LifeUnit>;
+using LifeUnits = QSet<LifeUnit>;
 
 struct GameModel
 {
@@ -48,6 +48,7 @@ struct GameModel
   virtual LifeUnits const& lifeUnits() const = 0;
 
   virtual void addUnit(LifeUnit const& life_unit) = 0;
+  virtual void makeStep() = 0;
 };
 using GameModelPtr = QSharedPointer<GameModel const>;
 using GameModelMutablePtr = QSharedPointer<GameModel>;

@@ -1,4 +1,5 @@
 #include <QPainter>
+#include <QTimer>
 
 #include "gameview.h"
 
@@ -45,7 +46,7 @@ QPoint GameView::fieldCells() const
   return game_model_->cells();
 }
 
-void GameView::initialize(Logic::GameModelPtr const game_model)
+void GameView::initialize(Logic::GameModelPtr game_model)
 {
   game_model_ = game_model;
 }
@@ -69,6 +70,7 @@ void GameView::paint(QPainter* painter_ptr)
   painter.setRenderHint(QPainter::Antialiasing);
 
   drawGrid(painter);
+  drawLifeCells(painter);
   drawSelectedCell(painter);
 }
 
@@ -128,6 +130,15 @@ void GameView::drawGrid(QPainter& painter) const
   }
 }
 
+void GameView::drawLifeCells(QPainter& painter) const
+{
+  painter.setBrush(QBrush(Qt::GlobalColor::white));
+  for (auto const& unit : game_model_->lifeUnits())
+  {
+    drawFilledCircle(painter, unit);
+  }
+}
+
 void GameView::drawSelectedCell(QPainter& painter) const
 {
   if (!pattern_trs_.first)
@@ -147,11 +158,16 @@ void GameView::drawSelectedCell(QPainter& painter) const
     painter.setBrush(QBrush(pattern_selection_color));
     for (auto const& point : current_pattern_->points())
     {
-      auto const center = cellToPixels(point * trs) + pixels_per_cell / 2.0;
-      auto const radius = pixels_per_cell * life_pixels_ratio;
-      painter.drawEllipse(center, radius.x(), radius.y());
+      drawFilledCircle(painter, point * trs);
     }
   }
+}
+
+void GameView::drawFilledCircle(QPainter& painter, QPoint cell) const
+{
+  auto const center = cellToPixels(cell) + pixels_per_cell / 2.0;
+  auto const radius = pixels_per_cell * life_pixels_ratio;
+  painter.drawEllipse(center, radius.x(), radius.y());
 }
 
 } // View
