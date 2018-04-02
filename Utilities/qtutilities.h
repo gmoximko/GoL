@@ -7,6 +7,12 @@
 
 namespace Utilities { namespace Qt {
 
+template<class T>
+QSharedPointer<T> makeShared()
+{
+  return QSharedPointer<T>(new T);
+}
+
 template<class T, class... Args>
 QSharedPointer<T> makeShared(Args&&... args)
 {

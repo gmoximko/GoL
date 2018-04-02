@@ -98,15 +98,27 @@ Item {
               var scaleRatio = gameView.scale * wheel.angleDelta.y / 120 / 10
               gameView.zoom(scaleRatio * (wheel.inverted ? -1 : 1), Qt.point(wheel.x, wheel.y))
             }
+            onClicked: {
+              if (!mouse.wasHeld) {
+                gameView.selectCell(Qt.point(mouse.x, mouse.y))
+                mouse.accepted = true
+              }
+            }
             onDoubleClicked: {
-              gameView.selectCell(Qt.point(mouse.x, mouse.y))
+              if (gameView.currentPattern === undefined) {
+                selectPattern()
+                mouse.accepted = true
+              }
             }
             onPressAndHold: {
               if (gameView.currentPattern !== undefined) {
-                gameView.selectPattern()
-                patternsList.hide()
-                mouse.accepted = false
+                selectPattern()
+                mouse.accepted = true
               }
+            }
+            function selectPattern() {
+              gameView.selectPattern()
+              patternsList.hide()
             }
           }
 

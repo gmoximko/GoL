@@ -1,26 +1,28 @@
 #ifndef GAMECONTROLLERIMPL_H
 #define GAMECONTROLLERIMPL_H
 
-#include <QTimer>
-
 #include "../gamecontroller.h"
 
 namespace Logic {
 
-class GameControllerImpl : public GameController
+class TimerController : public GameController
 {
   Q_OBJECT
 
 public:
-  explicit GameControllerImpl(QObject* parent, Params const& params);
+  explicit TimerController(QObject* parent, Params const& params);
 
 public slots:
   void addPattern(PatternTrs pattern_trs) override;
-  void makeStep();
+
+protected:
+  void timerEvent(QTimerEvent* event) override;
 
 private:
+  void makeStep();
+
+  int const step_timer_id_ = 0;
   GameModelMutablePtr game_model_;
-  QTimer timer_;
 };
 
 } // Logic

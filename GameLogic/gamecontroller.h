@@ -26,7 +26,7 @@ public slots:
   virtual void addPattern(PatternTrs pattern_trs) = 0;
 
 signals:
-  void onStepMade();
+  void stepMade();
 };
 using GameControllerPtr = QPointer<GameController>;
 GameControllerPtr createGameController(QObject* parent, GameController::Params const& params);

@@ -1,6 +1,7 @@
 #include <QPainter>
 #include <QTimer>
 
+#include "../Utilities/qtutilities.h"
 #include "gameview.h"
 
 namespace View {
@@ -106,8 +107,34 @@ void GameView::rotatePattern(qreal angle)
 void GameView::selectPattern()
 {
   Q_ASSERT(pattern_trs_.first);
-  Q_ASSERT(current_pattern_ != nullptr);
+  class SingleCell : public Logic::Pattern
+  {
+  public:
+    QString name() const override
+    {
+      return "";
+    }
+    Logic::Points const& points() const override
+    {
+      return points_;
+    }
+    QPoint size() const override
+    {
+      return QPoint(1, 1);
+    }
+    Logic::SizeT scores() const override
+    {
+      return points_.size();
+    }
 
+  private:
+    Logic::Points const points_ { QPoint() };
+  };
+
+  if (current_pattern_ == nullptr)
+  {
+    current_pattern_ = Utilities::Qt::makeShared<SingleCell>();
+  }
   emit patternSelected(qMakePair(current_pattern_, std::move(pattern_trs_.second)));
   pattern_trs_ = qMakePair(false, QMatrix());
   current_pattern_ = nullptr;

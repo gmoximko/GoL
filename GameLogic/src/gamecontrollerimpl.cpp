@@ -1,17 +1,18 @@
+#include <QTimerEvent>
+
 #include "gamecontrollerimpl.h"
 
 namespace Logic {
 
-GameControllerImpl::GameControllerImpl(QObject* parent, Params const& params)
+TimerController::TimerController(QObject* parent, Params const& params)
   : GameController(parent)
+  , step_timer_id_(startTimer(params.update_time_, Qt::TimerType::PreciseTimer))
   , game_model_(params.game_model_)
-  , timer_(this)
 {
-  QObject::connect(&timer_, &QTimer::timeout, this, &GameControllerImpl::makeStep);
-  timer_.start(params.update_time_);
+  Q_ASSERT(step_timer_id_ != 0);
 }
 
-void GameControllerImpl::addPattern(PatternTrs pattern_trs)
+void TimerController::addPattern(PatternTrs pattern_trs)
 {
   auto const& pattern = pattern_trs.first;
   auto const& trs = pattern_trs.second;
@@ -22,15 +23,23 @@ void GameControllerImpl::addPattern(PatternTrs pattern_trs)
   }
 }
 
-void GameControllerImpl::makeStep()
+void TimerController::timerEvent(QTimerEvent* event)
+{
+  if (event->timerId() == step_timer_id_)
+  {
+    makeStep();
+  }
+}
+
+void TimerController::makeStep()
 {
   game_model_->makeStep();
-  emit onStepMade();
+  emit stepMade();
 }
 
 GameControllerPtr createGameController(QObject* parent, GameController::Params const& params)
 {
-  return GameControllerPtr(new GameControllerImpl(parent, params));
+  return GameControllerPtr(new TimerController(parent, params));
 }
 
 } // Logic
