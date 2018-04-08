@@ -24,14 +24,6 @@ struct Pattern
 using PatternPtr = QSharedPointer<Pattern const>;
 using PatternTrs = QPair<PatternPtr, QMatrix>;
 
-struct Patterns
-{
-  virtual ~Patterns() = default;
-  virtual SizeT patternCount() const = 0;
-  virtual PatternPtr patternAt(SizeT idx) const = 0;
-};
-using PatternsPtr = QSharedPointer<Patterns const>;
-
 using LifeUnit = QPoint;
 using LifeUnits = QSet<LifeUnit>;
 
@@ -44,7 +36,8 @@ struct GameModel
 
   virtual ~GameModel() = default;
   virtual QPoint cells() const = 0;
-  virtual PatternsPtr const& allPatterns() const = 0;
+  virtual SizeT patternCount() const = 0;
+  virtual PatternPtr patternAt(SizeT idx) const = 0;
   virtual LifeUnits const& lifeUnits() const = 0;
 
   virtual void addUnit(LifeUnit const& life_unit) = 0;

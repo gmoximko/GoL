@@ -9,7 +9,14 @@
 
 namespace Utilities {
 
-Logic::PatternsPtr createPatterns();
+struct Patterns
+{
+  virtual ~Patterns() = default;
+  virtual Logic::SizeT patternCount() const = 0;
+  virtual Logic::PatternPtr parsePatternAt(Logic::SizeT idx) const = 0;
+};
+using PatternsPtr = QSharedPointer<Patterns const>;
+PatternsPtr createPatterns();
 
 } // Utilities
 

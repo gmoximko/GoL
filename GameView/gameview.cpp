@@ -39,7 +39,7 @@ QVariant GameView::currentPattern() const
 
 Logic::SizeT GameView::patternCount() const
 {
-  return game_model_->allPatterns()->patternCount();
+  return game_model_->patternCount();
 }
 
 QPoint GameView::fieldCells() const
@@ -77,7 +77,7 @@ void GameView::paint(QPainter* painter_ptr)
 
 QVariant GameView::patternModelAt(int idx) const
 {
-  return QVariant::fromValue(PatternModel(game_model_->allPatterns()->patternAt(idx)));
+  return QVariant::fromValue(PatternModel(game_model_->patternAt(idx)));
 }
 
 void GameView::pressed(QPointF point)

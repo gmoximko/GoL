@@ -140,7 +140,7 @@ private:
   Logic::Points points_;
 };
 
-class PatternsImpl : public Logic::Patterns
+class PatternsImpl : public Patterns
 {
 public:
   explicit PatternsImpl(QString patterns_path)
@@ -153,7 +153,7 @@ public:
   {
     return patterns_.count();
   }
-  Logic::PatternPtr patternAt(Logic::SizeT idx) const override
+  Logic::PatternPtr parsePatternAt(Logic::SizeT idx) const override
   {
     Q_ASSERT(idx >= 0 && idx < patternCount());
     auto const all_patterns = patterns_.entryInfoList(QDir::Files);
@@ -169,7 +169,7 @@ private:
 
 } // namespace
 
-Logic::PatternsPtr createPatterns()
+PatternsPtr createPatterns()
 {
   return Qt::makeShared<PatternsImpl>(":/Patterns/Patterns");
 }

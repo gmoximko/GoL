@@ -1,19 +1,18 @@
 #include <QHash>
 #include <QDebug>
 
-#include "gamemodel.h"
 #include "../Utilities/qtutilities.h"
 #include "../Utilities/rleparser.h"
-
-uint qHash(QPoint const& unit)
-{
-  return qHash(qMakePair(unit.x(), unit.y()));
-}
+#include "src/patterns.h"
+#include "src/lifeprocessor.h"
+#include "gamemodel.h"
 
 namespace Logic {
 
 namespace {
 
+template<class PatternsStrategy = AccumulatePatterns,
+         class LifeProcessorStrategy = SimpleLifeProcessor>
 class GameModelImpl : public GameModel
 {
 public:
@@ -37,69 +36,39 @@ public:
   {
     return cells_;
   }
-  PatternsPtr const& allPatterns() const override
+  SizeT patternCount() const override
   {
-    return all_patterns_;
+    return all_patterns_.patternCount();
+  }
+  PatternPtr patternAt(SizeT idx) const override
+  {
+    return all_patterns_.patternAt(idx);
   }
   LifeUnits const& lifeUnits() const override
   {
-    return life_units_;
+    return life_processor_.lifeUnits();
   }
 
   void addUnit(LifeUnit const& life_unit) override
   {
-    life_units_.insert(life_unit);
+    life_processor_.addUnit(life_unit);
   }
   void makeStep() override
   {
-    QHash<QPoint, int> new_life_units;
-    for (auto const& unit : life_units_)
-    {
-      for (int x = -1; x <= 1; ++x)
-      {
-        for (int y = -1; y <= 1; ++y)
-        {
-          QPoint neighbour(x, y);
-          if (neighbour != QPoint())
-          {
-            new_life_units[unit + neighbour]++;
-          }
-          else if (!new_life_units.contains(neighbour))
-          {
-            new_life_units[unit];
-          }
-        }
-      }
-    }
-    for (auto it = new_life_units.begin(); it != new_life_units.end(); ++it)
-    {
-      if (it.value() == 3)
-      {
-        life_units_.insert(it.key());
-      }
-      else if (it.value() < 2 || it.value() > 3)
-      {
-        auto to_erase = life_units_.find(it.key());
-        if (to_erase != life_units_.end())
-        {
-          life_units_.erase(to_erase);
-        }
-      }
-    }
+    life_processor_.processLife();
   }
 
 private:
   QPoint const cells_;
-  Logic::PatternsPtr const all_patterns_;
-
-  LifeUnits life_units_;
+  PatternsStrategy const all_patterns_;
+  LifeProcessorStrategy life_processor_;
 };
 
 } // namespace
 
 GameModelMutablePtr createGameModel(GameModel::Params const& params)
 {
-  return Utilities::Qt::makeShared<GameModelImpl>(params);
+  return Utilities::Qt::makeShared<GameModelImpl<>>(params);
 }
 
 } // Logic
