@@ -4,7 +4,7 @@
 #include <QSet>
 #include <QHash>
 
-#include "gpulifeprocessor.h"
+#include "../gamemodel.h"
 
 uint qHash(QPoint const& unit)
 {

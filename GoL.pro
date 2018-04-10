@@ -17,8 +17,7 @@ SOURCES += main.cpp \
     GameView/mainwindow.cpp \
     Utilities/rleparser.cpp \
     GameLogic/gamemodel.cpp \
-    GameLogic/src/gamecontrollerimpl.cpp \
-    GameLogic/src/gpulifeprocessor.cpp
+    GameLogic/src/gamecontrollerimpl.cpp
 
 RESOURCES += qml.qrc \
              patterns.qrc
@@ -46,5 +45,11 @@ HEADERS += \
     GameLogic/src/patterns.h \
     GameLogic/src/gpulifeprocessor.h
 
-mac: LIBS += -framework OpenCL
-else:unix|win32: LIBS += -lOpenCL
+mac|ios {
+    LIBS += -framework Foundation
+    OBJECTIVE_SOURCES += GameLogic/src/metallifeprocessor.mm
+}
+else:unix|win32 {
+    LIBS += -lOpenCL
+    SOURCES += GameLogic/src/opencllifeprocessor.cpp
+}

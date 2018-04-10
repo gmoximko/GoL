@@ -5,6 +5,7 @@
 #include "../Utilities/rleparser.h"
 #include "src/patterns.h"
 #include "src/lifeprocessor.h"
+#include "src/gpulifeprocessor.h"
 #include "gamemodel.h"
 
 namespace Logic {
