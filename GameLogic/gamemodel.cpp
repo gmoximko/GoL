@@ -13,13 +13,14 @@ namespace Logic {
 namespace {
 
 template<class PatternsStrategy = AccumulatePatterns,
-         class LifeProcessorStrategy = SimpleLifeProcessor>
+         class LifeProcessorStrategy = GPULifeProcessor>
 class GameModelImpl : public GameModel
 {
 public:
   explicit GameModelImpl(Params const& params)
     : cells_(params.cells_)
     , all_patterns_(Utilities::createPatterns())
+    , life_processor_(cells_)
   {
     //#if defined(QT_DEBUG)
     //  for (Logic::SizeT idx = 0; idx < all_patterns_->patternCount(); ++idx)

@@ -4,7 +4,6 @@
 #include <memory>
 #include <QSharedPointer>
 #include <QPoint>
-#include <QSet>
 #include <QVector>
 #include <QMatrix>
 
@@ -25,7 +24,7 @@ using PatternPtr = QSharedPointer<Pattern const>;
 using PatternTrs = QPair<PatternPtr, QMatrix>;
 
 using LifeUnit = QPoint;
-using LifeUnits = QSet<LifeUnit>;
+using LifeUnits = QVector<LifeUnit>;
 
 struct GameModel
 {

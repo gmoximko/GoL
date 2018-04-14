@@ -45,8 +45,8 @@ HEADERS += \
     GameLogic/src/patterns.h \
     GameLogic/src/gpulifeprocessor.h
 
-mac|ios {
-    LIBS += -framework Foundation
+macx|ios {
+    LIBS += -framework Foundation -framework Metal -framework MetalKit
     OBJECTIVE_SOURCES += GameLogic/src/metallifeprocessor.mm
 }
 else:unix|win32 {

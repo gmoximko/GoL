@@ -2,7 +2,6 @@
 #define LIFEPROCESSOR_H
 
 #include <QSet>
-#include <QHash>
 
 #include "../gamemodel.h"
 
@@ -16,9 +15,12 @@ namespace Logic {
 class SimpleLifeProcessor
 {
 public:
+  explicit SimpleLifeProcessor(QPoint /*field_size*/)
+  {}
+
   LifeUnits const& lifeUnits() const
   {
-    return life_units_;
+    return life_units_.toList().toVector();
   }
 
   void addUnit(LifeUnit const& life_unit)
@@ -64,7 +66,7 @@ public:
   }
 
 private:
-  LifeUnits life_units_;
+  QSet<LifeUnit> life_units_;
 };
 
 } // Logic
