@@ -5,11 +5,6 @@
 
 #include "../gamemodel.h"
 
-uint qHash(QPoint const& unit)
-{
-  return qHash(qMakePair(unit.x(), unit.y()));
-}
-
 namespace Logic {
 
 class SimpleLifeProcessor
@@ -20,7 +15,7 @@ public:
 
   LifeUnits const& lifeUnits() const
   {
-    return life_units_.toList().toVector();
+    return life_units_;
   }
 
   void addUnit(LifeUnit const& life_unit)
@@ -66,7 +61,7 @@ public:
   }
 
 private:
-  QSet<LifeUnit> life_units_;
+  LifeUnits life_units_;
 };
 
 } // Logic

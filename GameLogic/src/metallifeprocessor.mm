@@ -39,14 +39,15 @@ static NSString* const kernel_src =
     "  uchar neighbours = "
     "    input[nw] + input[n] + input[ne] + input[e] + input[se] + input[s] + input[sw] + input[w]; "
 
-    "  uchar self = input[idx(gid)];"
+    "  uchar self = input[idx(gid)]; "
 
     "  output[idx(gid)] = (self == 0) ? (neighbours == 3) : (neighbours == 2 || neighbours == 3); "
     "}\n";
 
 @interface MetalLifeProcessor : NSObject
 
-- (UInt8* const) lifeBuffer;
+- (NSUInteger) fieldSize;
+- (UInt8) unitAt: (NSUInteger)position;
 - (void) processLife;
 - (void) addUnit: (NSUInteger)position;
 
@@ -60,27 +61,30 @@ static NSString* const kernel_src =
   id<MTLBuffer> output_;
 
   MTLSize field_size_;
-  MTLSize thread_group_size_;
-  MTLSize thread_group_count_;
+  MTLSize threads_per_group_;
 
+  NSMutableSet* position_cache_;
   BOOL computed_;
 }
 
-- (UInt8* const) lifeBuffer
+- (NSUInteger) fieldSize
 {
-  return (UInt8* const)[input_ contents];
+  return field_size_.width * field_size_.height;
 }
 
-- (id) initWithSize: (MTLSize)size
+- (UInt8) unitAt: (NSUInteger)position
+{
+  assert(position < [self fieldSize]);
+  return ((UInt8*)[input_ contents])[position];
+}
+
+- (id) initWithWidth: (NSUInteger)width Height:(NSUInteger)height
 {
   self = [super init];
   assert(self);
 
-  field_size_ = size;
+  field_size_ = MTLSizeMake(width, height, 1);
   computed_ = YES;
-
-  thread_group_size_ = MTLSizeMake(1, 1, 1);
-  thread_group_count_ = MTLSizeMake(field_size_.width, field_size_.height, 1);
 
   NSError* error = nil;
   id<MTLDevice> device = MTLCreateSystemDefaultDevice();
@@ -101,16 +105,20 @@ static NSString* const kernel_src =
   assert([error code] == 0);
   assert(pipeline_state_);
 
+  NSUInteger exec_width = [pipeline_state_ threadExecutionWidth];
+  NSUInteger max_threads = [pipeline_state_ maxTotalThreadsPerThreadgroup] / exec_width;
+  threads_per_group_ = MTLSizeMake(exec_width, max_threads, 1);
+
   command_queue_ = [device newCommandQueue];
   assert(command_queue_);
 
-  NSUInteger const buffer_length = field_size_.width * field_size_.height;
-  input_ = [device newBufferWithLength: buffer_length options: MTLResourceStorageModeShared];
-  output_ = [device newBufferWithLength: buffer_length options: MTLResourceStorageModeShared];
+  input_ = [device newBufferWithLength: [self fieldSize] options: MTLResourceStorageModeShared];
+  output_ = [device newBufferWithLength: [self fieldSize] options: MTLResourceStorageModeShared];
 
   assert(input_);
   assert(output_);
 
+  position_cache_ = [[NSMutableSet alloc] init];
   return self;
 }
 
@@ -129,19 +137,13 @@ static NSString* const kernel_src =
   [compute_encoder setComputePipelineState: pipeline_state_];
   [compute_encoder setBuffer: input_ offset: 0 atIndex: 0];
   [compute_encoder setBuffer: output_ offset: 0 atIndex: 1];
-  [compute_encoder dispatchThreadgroups: thread_group_count_ threadsPerThreadgroup: thread_group_size_];
+  [compute_encoder dispatchThreads: field_size_ threadsPerThreadgroup: threads_per_group_];
   [compute_encoder endEncoding];
 
   [command_buffer addCompletedHandler: ^(id<MTLCommandBuffer> cb)
   {
     assert([[cb error] code] == 0);
-
-    computed_ = YES;
-    memset([input_ contents], 0, field_size_.width * field_size_.height);
-
-    id<MTLBuffer> tmp = input_;
-    input_ = output_;
-    output_ = tmp;
+    [self handleComputeCompletion];
   }];
   [command_buffer commit];
 }
@@ -150,9 +152,29 @@ static NSString* const kernel_src =
 {
   if (computed_)
   {
-    assert(position < field_size_.width * field_size_.height);
+    assert(position < [self fieldSize]);
     ((UInt8*)[input_ contents])[position] = 1;
   }
+  else
+  {
+    [position_cache_ addObject: [NSNumber numberWithUnsignedInt: position]];
+  }
+}
+
+- (void) handleComputeCompletion
+{
+  computed_ = YES;
+  memset([input_ contents], 0, [self fieldSize]);
+
+  id<MTLBuffer> tmp = input_;
+  input_ = output_;
+  output_ = tmp;
+
+  for (id pos in position_cache_)
+  {
+    [self addUnit: [pos unsignedIntegerValue]];
+  }
+  [position_cache_ removeAllObjects];
 }
 
 @end
@@ -160,7 +182,7 @@ static NSString* const kernel_src =
 namespace Logic {
 
 GPULifeProcessor::GPULifeProcessor(QPoint field_size)
-  : self_([[MetalLifeProcessor alloc] initWithSize: MTLSizeMake(field_size.x(), field_size.y(), 1)])
+  : self_([[MetalLifeProcessor alloc] initWithWidth: field_size.x() Height: field_size.y()])
   , field_size_(field_size)
 {}
 
@@ -171,21 +193,21 @@ GPULifeProcessor::~GPULifeProcessor()
 
 void GPULifeProcessor::processLife()
 {
+  id impl = (id)self_;
   life_units_.clear();
 
-  UInt8* storage = [(id)self_ lifeBuffer];
-  for (int idx = 0; idx < field_size_.x() * field_size_.y(); ++idx)
+  auto const field_size = static_cast<size_t>(field_size_.x() * field_size_.y());
+  for (size_t idx = 0; idx < field_size; ++idx)
   {
-    if (storage[idx] != 0)
+    if ([impl unitAt: idx] != 0)
     {
       int x = idx % field_size_.x();
       int y = idx / field_size_.y();
-      Q_ASSERT(!life_units_.contains(LifeUnit(x, y)));
-      life_units_.push_back(LifeUnit(x, y));
+      life_units_.insert(LifeUnit(x, y));
     }
   }
 
-  [(id)self_ processLife];
+  [impl processLife];
 }
 
 void GPULifeProcessor::addUnit(const LifeUnit &unit)

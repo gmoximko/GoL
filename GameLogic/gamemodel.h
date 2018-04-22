@@ -6,6 +6,7 @@
 #include <QPoint>
 #include <QVector>
 #include <QMatrix>
+#include <QSet>
 
 namespace Logic {
 
@@ -24,7 +25,7 @@ using PatternPtr = QSharedPointer<Pattern const>;
 using PatternTrs = QPair<PatternPtr, QMatrix>;
 
 using LifeUnit = QPoint;
-using LifeUnits = QVector<LifeUnit>;
+using LifeUnits = QSet<LifeUnit>;
 
 struct GameModel
 {
@@ -47,5 +48,10 @@ using GameModelMutablePtr = QSharedPointer<GameModel>;
 GameModelMutablePtr createGameModel(GameModel::Params const& params);
 
 } // Logic
+
+inline uint qHash(Logic::LifeUnit const& unit)
+{
+  return qHash(qMakePair(unit.x(), unit.y()));
+}
 
 #endif // GAMEMODEL_H
