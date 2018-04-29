@@ -19,7 +19,7 @@ public:
   struct Params
   {
     GameModelMutablePtr game_model_;
-    uint update_time_ = 500;
+    uint update_time_ = 100;
   };
 
 public slots:
