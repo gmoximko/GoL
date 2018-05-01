@@ -1,5 +1,7 @@
+#include <cmath>
+
 #include <QPainter>
-#include <QTimer>
+#include <QQuickWindow>
 
 #include "../Utilities/qtutilities.h"
 #include "gameview.h"
@@ -11,24 +13,10 @@ namespace {
 constexpr Qt::GlobalColor pattern_selection_color = Qt::GlobalColor::yellow;
 constexpr QPoint pixels_per_cell = QPoint(10.0, 10.0);
 constexpr qreal life_pixels_ratio = 0.3;
-
-QPointF cellToPixels(QPoint cell)
-{
-  return QPointF(cell.x() * pixels_per_cell.x(), cell.y() * pixels_per_cell.y());
-}
+constexpr int max_cells_in_screen = 1024;
+constexpr int min_cells_in_screen = 8;
 
 } // namespace
-
-QPointF GameView::pixelsPerCell() const
-{
-  return pixels_per_cell;
-}
-
-QPoint GameView::fieldSize() const
-{
-  return QPoint(fieldCells().x() * pixels_per_cell.x(),
-                fieldCells().y() * pixels_per_cell.y());
-}
 
 QVariant GameView::currentPattern() const
 {
@@ -75,6 +63,18 @@ void GameView::paint(QPainter* painter_ptr)
   drawSelectedCell(painter);
 }
 
+void GameView::setFieldOffset(QPointF field_offset)
+{
+  field_offset_ = loopPos(field_offset);
+  update();
+}
+
+void GameView::setFieldScale(qreal field_scale)
+{
+  field_scale_ = field_scale;
+  update();
+}
+
 QVariant GameView::patternModelAt(int idx) const
 {
   return QVariant::fromValue(PatternModel(game_model_->patternAt(idx)));
@@ -82,8 +82,9 @@ QVariant GameView::patternModelAt(int idx) const
 
 void GameView::pressed(QPointF point)
 {
-  QPoint cell(point.x() / pixels_per_cell.x(),
-              point.y() / pixels_per_cell.y());
+  point = loopPos(point);
+  QPoint cell(point.x() / pixelsPerCell().x(),
+              point.y() / pixelsPerCell().y());
 
   pattern_trs_.first = true;
   auto& trs = pattern_trs_.second;
@@ -143,17 +144,21 @@ void GameView::selectPattern()
 
 void GameView::drawGrid(QPainter& painter) const
 {
-  auto const field_size = fieldSize();
-  auto const cells = fieldCells();
+  auto const window = size();
+  auto const pixels_per_cell = pixelsPerCell();
+  auto const cells = QPoint(window.width() / pixels_per_cell.x(), window.height() / pixels_per_cell.y());
+  auto const offset = QPointF(std::fmod(field_offset_.x(), pixels_per_cell.x()),
+                              std::fmod(field_offset_.y(), pixels_per_cell.y()));
+
   for (int x = 0; x <= cells.x(); ++x)
-  {
-    int line_x = x * pixels_per_cell.x();
-    painter.drawLine(line_x, 0, line_x, field_size.y());
+  {    
+    qreal line_x = x * pixels_per_cell.x() + offset.x();
+    painter.drawLine(QLineF(line_x, 0, line_x, window.height()));
   }
   for (int y = 0; y <= cells.y(); ++y)
   {
-    int line_y = y * pixels_per_cell.y();
-    painter.drawLine(0, line_y, field_size.x(), line_y);
+    qreal line_y = y * pixels_per_cell.y() + offset.y();
+    painter.drawLine(QLineF(0, line_y, window.width(), line_y));
   }
 }
 
@@ -177,7 +182,8 @@ void GameView::drawSelectedCell(QPainter& painter) const
   if (current_pattern_ == nullptr)
   {
     auto const cell = QPoint(trs.dx(), trs.dy());
-    QRectF rect(cellToPixels(cell), QSizeF(pixels_per_cell.x(), pixels_per_cell.y()));
+    auto const size = QSizeF(pixelsPerCell().x(), pixelsPerCell().y());
+    QRectF rect(cellToPixels(cell), size);
     painter.fillRect(rect, QBrush(pattern_selection_color));
   }
   else
@@ -185,16 +191,59 @@ void GameView::drawSelectedCell(QPainter& painter) const
     painter.setBrush(QBrush(pattern_selection_color));
     for (auto const& point : current_pattern_->points())
     {
-      drawFilledCircle(painter, point * trs);
+      drawFilledCircle(painter, game_model_->loopPos(point * trs));
     }
   }
 }
 
 void GameView::drawFilledCircle(QPainter& painter, QPoint cell) const
 {
-  auto const center = cellToPixels(cell) + pixels_per_cell / 2.0;
-  auto const radius = pixels_per_cell * life_pixels_ratio;
+  auto const center = cellToPixels(cell) + pixelsPerCell() / 2.0;
+  auto const radius = pixelsPerCell() * life_pixels_ratio;
   painter.drawEllipse(center, radius.x(), radius.y());
+}
+
+QPoint GameView::fieldSize() const
+{
+  return QPoint(fieldCells().x() * pixelsPerCell().x(),
+                fieldCells().y() * pixelsPerCell().y());
+}
+
+QPointF GameView::pixelsPerCell() const
+{
+  return pixels_per_cell * field_scale_;
+}
+
+QPointF GameView::cellToPixels(QPoint cell) const
+{
+  QPointF const point(cell.x() * pixelsPerCell().x(),
+                      cell.y() * pixelsPerCell().y());
+  return loopPos(point + field_offset_);
+}
+
+QPointF GameView::loopPos(QPointF point) const
+{
+  QPointF const field_size = fieldSize();
+  Q_ASSERT(field_size != QPointF());
+  return QPointF(std::fmod((point.x() + field_size.x()), field_size.x()),
+                 std::fmod((point.y() + field_size.y()), field_size.y()));
+}
+
+qreal GameView::maxScale() const
+{
+  QPointF const min_cells = pixels_per_cell * min_cells_in_screen;
+  return std::min(window()->size().width() / min_cells.x(),
+                  window()->size().height() / min_cells.y());
+}
+
+qreal GameView::minScale() const
+{
+  auto const cells = game_model_->cells();
+  auto const max_cells_x = std::min(cells.x(), max_cells_in_screen);
+  auto const max_cells_y = std::min(cells.y(), max_cells_in_screen);
+  QPointF const max_cells(max_cells_x * pixels_per_cell.x(), max_cells_y * pixels_per_cell.y());
+  return std::max(window()->size().width() / max_cells.x(),
+                  window()->size().height() / max_cells.y());
 }
 
 } // View

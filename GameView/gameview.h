@@ -47,16 +47,16 @@ private:
 class GameView : public QQuickPaintedItem
 {
   Q_OBJECT
-  Q_PROPERTY(QPointF pixelsPerCell READ pixelsPerCell CONSTANT)
-  Q_PROPERTY(QPoint fieldSize READ fieldSize CONSTANT)
   Q_PROPERTY(QVariant currentPattern READ currentPattern WRITE setCurrentPattern NOTIFY currentPatternChanged)
   Q_PROPERTY(int patternCount READ patternCount CONSTANT)
+  Q_PROPERTY(QPointF fieldOffset MEMBER field_offset_ WRITE setFieldOffset)
+  Q_PROPERTY(qreal fieldScale MEMBER field_scale_ WRITE setFieldScale)
+  Q_PROPERTY(qreal maxScale READ maxScale CONSTANT)
+  Q_PROPERTY(qreal minScale READ minScale CONSTANT)
 
 public:
   using QQuickPaintedItem::QQuickPaintedItem;
 
-  QPointF pixelsPerCell() const;
-  QPoint fieldSize() const;
   QVariant currentPattern() const;
   Logic::SizeT patternCount() const;
   QPoint fieldCells() const;
@@ -64,6 +64,8 @@ public:
   void initialize(Logic::GameModelPtr game_model);
   void setCurrentPattern(QVariant const& pattern_model);
   void paint(QPainter* painter_ptr) override;
+  void setFieldOffset(QPointF field_offset);
+  void setFieldScale(qreal ratio);
 
   Q_INVOKABLE QVariant patternModelAt(int idx) const;
   Q_INVOKABLE void pressed(QPointF point);
@@ -80,7 +82,15 @@ private:
   void drawLifeCells(QPainter& painter) const;
   void drawSelectedCell(QPainter& painter) const;
   void drawFilledCircle(QPainter& painer, QPoint cell) const;
+  QPoint fieldSize() const;
+  QPointF pixelsPerCell() const;
+  QPointF cellToPixels(QPoint cell) const;
+  QPointF loopPos(QPointF point) const;
+  qreal maxScale() const;
+  qreal minScale() const;
 
+  QPointF field_offset_;
+  qreal field_scale_ = 1.0;
   MaybeTRS pattern_trs_;
   Logic::PatternPtr current_pattern_;
   Logic::GameModelPtr game_model_;

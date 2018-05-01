@@ -39,6 +39,7 @@ struct GameModel
   virtual SizeT patternCount() const = 0;
   virtual PatternPtr patternAt(SizeT idx) const = 0;
   virtual LifeUnits const& lifeUnits() const = 0;
+  virtual QPoint loopPos(QPoint point) const = 0;
 
   virtual void addUnit(LifeUnit const& life_unit) = 0;
   virtual void makeStep() = 0;

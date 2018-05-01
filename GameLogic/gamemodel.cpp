@@ -50,10 +50,16 @@ public:
   {
     return life_processor_.lifeUnits();
   }
+  QPoint loopPos(QPoint point) const override
+  {
+    Q_ASSERT(cells_ != QPoint());
+    return QPoint((point.x() + cells_.x()) % cells_.x(),
+                  (point.y() + cells_.y()) % cells_.y());
+  }
 
   void addUnit(LifeUnit const& life_unit) override
   {
-    life_processor_.addUnit(life_unit);
+    life_processor_.addUnit(loopPos(life_unit));
   }
   void makeStep() override
   {

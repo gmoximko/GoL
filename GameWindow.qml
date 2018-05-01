@@ -12,49 +12,43 @@ Item {
     id: column
     anchors.fill: parent
 
-    Flickable {
-      id: flickable
+    Rectangle {
       clip: true
       width: gameWindow.width
       height: patternsList.visible ? gameWindow.height - patternsList.height : gameWindow.height
-      contentWidth: gameView.width * gameView.scale
-      contentHeight: gameView.height * gameView.scale
 
       GameView {
         id: gameView
-        width: fieldSize.x
-        height: fieldSize.y
+        width: gameWindow.width
+        height: gameWindow.height
         fillColor: "#000000"
-        scale: maxScale
-        anchors.verticalCenter: parent.verticalCenter
+        anchors.top: parent.top
         anchors.horizontalCenter: parent.horizontalCenter
+        fieldScale: maxScale
 
         function selectCell(point) {
-          pressed(Qt.point(point.x, point.y))
+          pressed(Qt.point(point.x - fieldOffset.x, point.y - fieldOffset.y))
           patternsList.show()
         }
 
-        property int minCellsInScreen: 10
-        property real maxScale: Math.min(gameWindow.width / (pixelsPerCell.x * minCellsInScreen),
-                                         gameWindow.height / (pixelsPerCell.y * minCellsInScreen))
-        property real minScale: Math.max(gameWindow.width / width, gameWindow.height / height)
         function zoom(ratio, point) {
-          var newScale = scale + ratio
+          var newScale = fieldScale + ratio
           console.assert(minScale < maxScale, minScale, maxScale)
 
           if (newScale > maxScale) {
-            ratio = maxScale - scale
+            ratio = maxScale - fieldScale
             newScale = maxScale
           } else if (newScale < minScale) {
-            ratio = minScale - scale
+            ratio = minScale - fieldScale
             newScale = minScale
           }
-          console.assert(scale + ratio <= maxScale, scale + ratio)
-          console.assert(scale + ratio >= minScale, scale + ratio)
+          console.assert(fieldScale + ratio <= maxScale, fieldScale + ratio)
+          console.assert(fieldScale + ratio >= minScale, fieldScale + ratio)
 
-          scale = newScale
-          flickable.contentX += point.x * ratio
-          flickable.contentY += point.y * ratio
+          fieldScale = newScale
+          var offset = Qt.point(fieldOffset.x + point.x * ratio,
+                                fieldOffset.y + point.y * ratio)
+          fieldOffset = offset
         }
 
         PinchArea {
@@ -65,7 +59,7 @@ Item {
           property real sensitivity: 5
 
           onPinchStarted: {
-            startScale = gameView.scale
+            startScale = gameView.fieldScale
             deltaAngle = 0
           }
           onPinchUpdated: {
@@ -75,9 +69,7 @@ Item {
             var rotationRatio = sensitivity * (pinch.angle - pinch.previousAngle)
             rotatePattern(rotationRatio)
           }
-          onPinchFinished: {
-            flickable.returnToBounds()
-          }
+          onPinchFinished: {}
 
           property real deltaAngle
           function rotatePattern(delta) {
@@ -94,8 +86,20 @@ Item {
             scrollGestureEnabled: false
             acceptedButtons: { Qt.LeftButton | Qt.RightButton }
 
+            property real startX
+            property real startY
+            onPressed: {
+              startX = mouseX
+              startY = mouseY
+            }
+            onPositionChanged: {
+              var offset = gameView.fieldOffset
+              gameView.fieldOffset = Qt.point(offset.x + mouseX - startX, offset.y + mouseY - startY)
+              startX = mouseX
+              startY = mouseY
+            }
             onWheel: {
-              var scaleRatio = gameView.scale * wheel.angleDelta.y / 120 / 10
+              var scaleRatio = gameView.fieldScale * wheel.angleDelta.y / 120 / 10
               gameView.zoom(scaleRatio * (wheel.inverted ? -1 : 1), Qt.point(wheel.x, wheel.y))
             }
             onClicked: {
