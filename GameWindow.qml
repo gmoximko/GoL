@@ -12,133 +12,105 @@ Item {
     id: column
     anchors.fill: parent
 
-    Rectangle {
-      clip: true
+    GameView {
+      id: gameView
       width: gameWindow.width
       height: patternsList.visible ? gameWindow.height - patternsList.height : gameWindow.height
+      fillColor: "#000000"
+      anchors.horizontalCenter: parent.horizontalCenter
+      fieldScale: maxScale
 
-      GameView {
-        id: gameView
-        width: gameWindow.width
-        height: gameWindow.height
-        fillColor: "#000000"
-        anchors.top: parent.top
-        anchors.horizontalCenter: parent.horizontalCenter
-        fieldScale: maxScale
+      function selectCell(point) {
+        pressed(point)
+        patternsList.show()
+      }
+      PinchArea {
+        id: pinchArea
+        anchors.fill: parent
 
-        function selectCell(point) {
-          pressed(Qt.point(point.x - fieldOffset.x, point.y - fieldOffset.y))
-          patternsList.show()
+        property real startScale
+        property real sensitivity: 5
+
+        onPinchStarted: {
+          startScale = gameView.fieldScale
+          deltaAngle = 0
         }
+        onPinchUpdated: {
+          var scaleRatio = startScale * (pinch.scale - pinch.previousScale)
+          gameView.zoom(scaleRatio, pinch.startCenter)
 
-        function zoom(ratio, point) {
-          var newScale = fieldScale + ratio
-          console.assert(minScale < maxScale, minScale, maxScale)
-
-          if (newScale > maxScale) {
-            ratio = maxScale - fieldScale
-            newScale = maxScale
-          } else if (newScale < minScale) {
-            ratio = minScale - fieldScale
-            newScale = minScale
-          }
-          console.assert(fieldScale + ratio <= maxScale, fieldScale + ratio)
-          console.assert(fieldScale + ratio >= minScale, fieldScale + ratio)
-
-          fieldScale = newScale
-          var offset = Qt.point(fieldOffset.x + point.x * ratio,
-                                fieldOffset.y + point.y * ratio)
-          fieldOffset = offset
+          var rotationRatio = sensitivity * (pinch.angle - pinch.previousAngle)
+          rotatePattern(rotationRatio)
         }
+        onPinchFinished: {}
 
-        PinchArea {
-          id: pinchArea
-          anchors.fill: parent
-
-          property real startScale
-          property real sensitivity: 5
-
-          onPinchStarted: {
-            startScale = gameView.fieldScale
+        property real deltaAngle
+        function rotatePattern(delta) {
+          deltaAngle += delta
+          if (Math.abs(deltaAngle) >= 90) {
+            gameView.rotatePattern(deltaAngle > 0 ? 90 : -90)
             deltaAngle = 0
           }
-          onPinchUpdated: {
-            var scaleRatio = startScale * (pinch.scale - pinch.previousScale)
-            gameView.zoom(scaleRatio, pinch.startCenter)
+        }
 
-            var rotationRatio = sensitivity * (pinch.angle - pinch.previousAngle)
-            rotatePattern(rotationRatio)
+        MouseArea {
+          id: mouseArea
+          anchors.fill: parent
+          scrollGestureEnabled: false
+          acceptedButtons: { Qt.LeftButton | Qt.RightButton }
+
+          property real startX
+          property real startY
+          onPressed: {
+            startX = mouseX
+            startY = mouseY
           }
-          onPinchFinished: {}
-
-          property real deltaAngle
-          function rotatePattern(delta) {
-            deltaAngle += delta
-            if (Math.abs(deltaAngle) >= 90) {
-              gameView.rotatePattern(deltaAngle > 0 ? 90 : -90)
-              deltaAngle = 0
-            }
+          onPositionChanged: {
+            var offset = gameView.fieldOffset
+            gameView.fieldOffset = Qt.point(offset.x + mouseX - startX, offset.y + mouseY - startY)
+            startX = mouseX
+            startY = mouseY
           }
-
-          MouseArea {
-            id: mouseArea
-            anchors.fill: parent
-            scrollGestureEnabled: false
-            acceptedButtons: { Qt.LeftButton | Qt.RightButton }
-
-            property real startX
-            property real startY
-            onPressed: {
-              startX = mouseX
-              startY = mouseY
-            }
-            onPositionChanged: {
-              var offset = gameView.fieldOffset
-              gameView.fieldOffset = Qt.point(offset.x + mouseX - startX, offset.y + mouseY - startY)
-              startX = mouseX
-              startY = mouseY
-            }
-            onWheel: {
-              var scaleRatio = gameView.fieldScale * wheel.angleDelta.y / 120 / 10
-              gameView.zoom(scaleRatio * (wheel.inverted ? -1 : 1), Qt.point(wheel.x, wheel.y))
-            }
-            onClicked: {
-              if (!mouse.wasHeld) {
-                gameView.selectCell(Qt.point(mouse.x, mouse.y))
-                mouse.accepted = true
-              }
-            }
-            onDoubleClicked: {
-              if (gameView.currentPattern === undefined) {
-                selectPattern()
-                mouse.accepted = true
-              }
-            }
-            onPressAndHold: {
-              if (gameView.currentPattern !== undefined) {
-                selectPattern()
-                mouse.accepted = true
-              }
-            }
-            function selectPattern() {
-              gameView.selectPattern()
-              patternsList.hide()
+          onWheel: {
+            var scaleRatio = gameView.fieldScale * wheel.angleDelta.y / 120 / 10
+            gameView.zoom(scaleRatio * (wheel.inverted ? -1 : 1), Qt.point(wheel.x, wheel.y))
+          }
+          onClicked: {
+            if (!mouse.wasHeld) {
+              gameView.selectCell(Qt.point(mouse.x, mouse.y))
+              mouse.accepted = true
             }
           }
-
-          MultiPointTouchArea {
-            id: touchArea
-            anchors.fill: parent
-            mouseEnabled: false
-            minimumTouchPoints: 1
-            maximumTouchPoints: 2
-            touchPoints: [
-              TouchPoint { id: touchPoint1 },
-              TouchPoint { id: touchPoint2 }
-            ]
-            onReleased: {
-              gameView.selectCell(touchPoint1)
+          onDoubleClicked: {
+            if (gameView.currentPattern === undefined) {
+              selectPattern()
+              mouse.accepted = true
             }
+          }
+          onPressAndHold: {
+            if (gameView.currentPattern !== undefined) {
+              selectPattern()
+              mouse.accepted = true
+            }
+          }
+          function selectPattern() {
+            gameView.selectPattern()
+            patternsList.hide()
+          }
+        }
+
+        MultiPointTouchArea {
+          id: touchArea
+          anchors.fill: parent
+          mouseEnabled: false
+          minimumTouchPoints: 1
+          maximumTouchPoints: 2
+          touchPoints: [
+            TouchPoint { id: touchPoint1 },
+            TouchPoint { id: touchPoint2 }
+          ]
+          onReleased: {
+            gameView.selectCell(touchPoint1)
           }
         }
       }

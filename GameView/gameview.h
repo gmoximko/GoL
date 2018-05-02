@@ -71,6 +71,7 @@ public:
   Q_INVOKABLE void pressed(QPointF point);
   Q_INVOKABLE void rotatePattern(qreal angle);
   Q_INVOKABLE void selectPattern();
+  Q_INVOKABLE void zoom(qreal ratio, QPointF point);
 
 signals:
   void currentPatternChanged();
@@ -82,7 +83,11 @@ private:
   void drawLifeCells(QPainter& painter) const;
   void drawSelectedCell(QPainter& painter) const;
   void drawFilledCircle(QPainter& painer, QPoint cell) const;
+  void drawCoordinates(QPainter& painter) const;
+
   QPoint fieldSize() const;
+  QPoint cellsOnTheScreen() const;
+  QPointF cellOffset() const;
   QPointF pixelsPerCell() const;
   QPointF cellToPixels(QPoint cell) const;
   QPointF loopPos(QPointF point) const;
