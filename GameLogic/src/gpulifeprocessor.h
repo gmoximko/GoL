@@ -1,25 +1,23 @@
 #ifndef GPULIFEPROCESSOR_H
 #define GPULIFEPROCESSOR_H
 
-#include <QPoint>
-
 #include "../gamemodel.h"
 
 namespace Logic {
 
-class GPULifeProcessor
+class GPULifeProcessor : public LifeProcessor
 {
 public:
   explicit GPULifeProcessor(QPoint field_size);
-  ~GPULifeProcessor();
+  ~GPULifeProcessor() override;
 
-  LifeUnits const& lifeUnits() const
+  LifeUnits const& lifeUnits() const override
   {
     return life_units_;
   }
 
-  void processLife();
-  void addUnit(LifeUnit const& unit);
+  void addUnit(LifeUnit const& unit) override;
+  void processLife() override;
 
 private:
   void* self_;

@@ -87,12 +87,16 @@ static NSString* const kernel_src =
 
   NSError* error = nil;
   id<MTLDevice> device = MTLCreateSystemDefaultDevice();
+  if (!device)
+  {
+    [NSException raise: NSGenericException format: @"Metal is not supported on this device"];
+  }
 
   MTLCompileOptions* options = [[MTLCompileOptions alloc] init];
   options.preprocessorMacros =
       @{
-        @"WIDTH" : [NSNumber numberWithUnsignedInt: field_size_.width],
-        @"HEIGHT" : [NSNumber numberWithUnsignedInt: field_size_.height]
+        @"WIDTH" : [NSNumber numberWithUnsignedLong: field_size_.width],
+        @"HEIGHT" : [NSNumber numberWithUnsignedLong: field_size_.height]
        };
   id<MTLLibrary> library = [device newLibraryWithSource: kernel_src options: options error: &error];
   assert([error code] == 0);
@@ -156,7 +160,7 @@ static NSString* const kernel_src =
   }
   else
   {
-    [position_cache_ addObject: [NSNumber numberWithUnsignedInt: position]];
+    [position_cache_ addObject: [NSNumber numberWithUnsignedLong: position]];
   }
 }
 
@@ -180,13 +184,24 @@ static NSString* const kernel_src =
 namespace Logic {
 
 GPULifeProcessor::GPULifeProcessor(QPoint field_size)
+try
   : self_([[MetalLifeProcessor alloc] initWithWidth: field_size.x() Height: field_size.y()])
   , field_size_(field_size)
 {}
+catch(NSException* e)
+{
+  auto const* msg = [[e reason] cStringUsingEncoding: NSUTF8StringEncoding];
+  throw std::runtime_error(msg);
+}
 
 GPULifeProcessor::~GPULifeProcessor()
 {
   [(id)self_ dealloc];
+}
+
+void GPULifeProcessor::addUnit(LifeUnit const& unit)
+{
+  [(id)self_ addUnit: (unit.x() + unit.y() * field_size_.y())];
 }
 
 void GPULifeProcessor::processLife()
@@ -199,18 +214,13 @@ void GPULifeProcessor::processLife()
   {
     if ([impl unitAt: idx] != 0)
     {
-      int x = idx % field_size_.x();
-      int y = idx / field_size_.y();
+      int x = static_cast<int>(idx % field_size_.x());
+      int y = static_cast<int>(idx / field_size_.y());
       life_units_.insert(LifeUnit(x, y));
     }
   }
 
   [impl processLife];
-}
-
-void GPULifeProcessor::addUnit(const LifeUnit &unit)
-{
-  [(id)self_ addUnit: (unit.x() + unit.y() * field_size_.y())];
 }
 
 } // Logic

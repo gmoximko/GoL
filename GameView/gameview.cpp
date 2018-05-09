@@ -236,7 +236,7 @@ void GameView::drawSelectedCell(QPainter& painter) const
     painter.setBrush(QBrush(pattern_selection_color));
     for (auto const& point : current_pattern_->points())
     {
-      drawFilledCircle(painter, game_model_->loopPos(point * trs));
+      drawFilledCircle(painter, Logic::loopPos(point * trs, game_model_->cells()));
     }
   }
 }
@@ -255,13 +255,15 @@ void GameView::drawCoordinates(QPainter& painter) const
   auto const offset = cellOffset();
   auto const cell_center = pixelsPerCell() / 2;
   auto const font_metrics = painter.fontMetrics();
+  auto const field_cells = fieldCells();
 
   QPoint numbers;
   for (int x = -1; x <= cells.x(); ++x)
   {
     auto const pos_x = x * pixelsPerCell().x() + cell_center.x() + offset.x();
     numbers.setX(x + static_cast<int>(field_offset_.x() / -pixelsPerCell().x()));
-    auto const number_str = QString::number(game_model_->loopPos(numbers).x());
+    numbers = Logic::loopPos(numbers, field_cells);
+    auto const number_str = QString::number(numbers.x());
 
     QPointF top(pos_x, font_metrics.height());
     QPointF bottom(pos_x, window.height());
@@ -272,7 +274,8 @@ void GameView::drawCoordinates(QPainter& painter) const
   {
     auto const pos_y = y * pixelsPerCell().y() + cell_center.y() + offset.y();
     numbers.setY(y + static_cast<int>(field_offset_.y() / -pixelsPerCell().y()));
-    auto const number_str = QString::number(game_model_->loopPos(numbers).y());
+    numbers = Logic::loopPos(numbers, field_cells);
+    auto const number_str = QString::number(numbers.y());
 
     QPointF left(0, pos_y);
     QPointF right(window.width() - font_metrics.width(number_str), pos_y);

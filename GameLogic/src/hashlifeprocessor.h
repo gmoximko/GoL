@@ -1,28 +1,27 @@
-#ifndef LIFEPROCESSOR_H
-#define LIFEPROCESSOR_H
-
-#include <QSet>
+#ifndef HASHLIFEPROCESSOR_H
+#define HASHLIFEPROCESSOR_H
 
 #include "../gamemodel.h"
 
 namespace Logic {
 
-class SimpleLifeProcessor
+class HashLifeProcessor : public LifeProcessor
 {
 public:
-  explicit SimpleLifeProcessor(QPoint /*field_size*/)
+  explicit HashLifeProcessor(QPoint field_size)
+    : field_size_(field_size)
   {}
 
-  LifeUnits const& lifeUnits() const
+  LifeUnits const& lifeUnits() const override
   {
     return life_units_;
   }
 
-  void addUnit(LifeUnit const& life_unit)
+  void addUnit(LifeUnit const& life_unit) override
   {
     life_units_.insert(life_unit);
   }
-  void processLife()
+  void processLife() override
   {
     QHash<QPoint, int> new_life_units;
     for (auto const& unit : life_units_)
@@ -34,7 +33,8 @@ public:
           QPoint neighbour(x, y);
           if (neighbour != QPoint())
           {
-            new_life_units[unit + neighbour]++;
+            auto const neighbour_unit = loopPos(unit + neighbour, field_size_);
+            new_life_units[neighbour_unit]++;
           }
           else if (!new_life_units.contains(neighbour))
           {
@@ -61,9 +61,10 @@ public:
   }
 
 private:
+  QPoint const field_size_;
   LifeUnits life_units_;
 };
 
 } // Logic
 
-#endif // LIFEPROCESSOR_H
+#endif // HASHLIFEPROCESSOR_H

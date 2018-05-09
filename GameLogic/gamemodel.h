@@ -13,6 +13,8 @@ namespace Logic {
 using Points = QVector<QPoint>;
 using SizeT = int;
 
+QPoint loopPos(QPoint point, QPoint cells);
+
 struct Pattern
 {
   virtual ~Pattern() = default;
@@ -39,7 +41,6 @@ struct GameModel
   virtual SizeT patternCount() const = 0;
   virtual PatternPtr patternAt(SizeT idx) const = 0;
   virtual LifeUnits const& lifeUnits() const = 0;
-  virtual QPoint loopPos(QPoint point) const = 0;
 
   virtual void addUnit(LifeUnit const& life_unit) = 0;
   virtual void makeStep() = 0;
@@ -47,6 +48,15 @@ struct GameModel
 using GameModelPtr = QSharedPointer<GameModel const>;
 using GameModelMutablePtr = QSharedPointer<GameModel>;
 GameModelMutablePtr createGameModel(GameModel::Params const& params);
+
+struct LifeProcessor
+{
+  virtual ~LifeProcessor() = default;
+  virtual LifeUnits const& lifeUnits() const = 0;
+  virtual void addUnit(LifeUnit const& unit) = 0;
+  virtual void processLife() = 0;
+};
+using LifeProcessorPtr = std::unique_ptr<LifeProcessor>;
 
 } // Logic
 
