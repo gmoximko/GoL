@@ -15,6 +15,13 @@ constexpr auto pixels_per_cell = QPoint(10.0, 10.0);
 constexpr auto life_pixels_ratio = 0.3;
 constexpr auto max_cells_in_screen = 1024;
 constexpr auto min_cells_in_screen = 8;
+constexpr auto scale_to_hide_grid = 0.2;
+
+template<typename T>
+T normalizeValue(T value, T min, T max)
+{
+  return (value + min) / (min + max);
+}
 
 } // namespace
 
@@ -58,9 +65,19 @@ void GameView::paint(QPainter* painter_ptr)
   painter.setPen(Qt::GlobalColor::white);
   painter.setRenderHint(QPainter::Antialiasing);
 
-  drawGrid(painter);
   drawLifeCells(painter);
   drawSelectedCell(painter);
+
+  auto const normalized_scale = normalizeValue(field_scale_, minScale(), maxScale());
+  if (normalized_scale < scale_to_hide_grid)
+  {
+    return;
+  }
+  else if (normalized_scale < 1.0)
+  {
+    painter.setOpacity(normalized_scale);
+  }
+  drawGrid(painter);
   drawCoordinates(painter);
 }
 
@@ -160,6 +177,7 @@ void GameView::zoom(qreal ratio, QPointF point)
   }
   Q_ASSERT(field_scale_ + ratio <= max_scale);
   Q_ASSERT(field_scale_ + ratio >= min_scale);
+
   auto const world_point = loopPos(point - field_offset_);
   auto const old_size = fieldSize();
   QPointF const normalized_point(world_point.x() / old_size.x(), world_point.y() / old_size.y());

@@ -46,7 +46,6 @@ static NSString* const kernel_src =
 
 @interface MetalLifeProcessor : NSObject
 
-- (NSUInteger) fieldSize;
 - (UInt8) unitAt: (NSUInteger)position;
 - (void) processLife;
 - (void) addUnit: (NSUInteger)position;
@@ -164,7 +163,6 @@ static NSString* const kernel_src =
 - (void) handleComputeCompletion
 {
   computed_ = YES;
-  memset([input_ contents], 0, [self fieldSize]);
 
   id<MTLBuffer> tmp = input_;
   input_ = output_;
