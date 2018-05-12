@@ -20,15 +20,25 @@ Item {
       anchors.horizontalCenter: parent.horizontalCenter
       fieldScale: maxScale
 
+      property point start: Qt.point(0, 0)
+      function dragField(point) {
+        var offset = fieldOffset
+        fieldOffset = Qt.point(offset.x + point.x - start.x, offset.y + point.y - start.y)
+        start = point
+      }
       function selectCell(point) {
         pressed(point)
         patternsList.show()
+      }
+      function selectPatt() {
+        selectPattern()
+        patternsList.hide()
       }
       PinchArea {
         id: pinchArea
         anchors.fill: parent
 
-        property real startScale
+        property real startScale: gameView.maxScale
         property real sensitivity: 5
 
         onPinchStarted: {
@@ -44,7 +54,7 @@ Item {
         }
         onPinchFinished: {}
 
-        property real deltaAngle
+        property real deltaAngle: 0
         function rotatePattern(delta) {
           deltaAngle += delta
           if (Math.abs(deltaAngle) >= 90) {
@@ -59,17 +69,11 @@ Item {
           scrollGestureEnabled: false
           acceptedButtons: { Qt.LeftButton | Qt.RightButton }
 
-          property real startX
-          property real startY
           onPressed: {
-            startX = mouseX
-            startY = mouseY
+            gameView.start = Qt.point(mouseX, mouseY)
           }
           onPositionChanged: {
-            var offset = gameView.fieldOffset
-            gameView.fieldOffset = Qt.point(offset.x + mouseX - startX, offset.y + mouseY - startY)
-            startX = mouseX
-            startY = mouseY
+            gameView.dragField(Qt.point(mouseX, mouseY))
           }
           onWheel: {
             var scaleRatio = gameView.fieldScale * wheel.angleDelta.y / 120 / 10
@@ -83,19 +87,15 @@ Item {
           }
           onDoubleClicked: {
             if (gameView.currentPattern === undefined) {
-              selectPattern()
+              gameView.selectPatt()
               mouse.accepted = true
             }
           }
           onPressAndHold: {
             if (gameView.currentPattern !== undefined) {
-              selectPattern()
+              gameView.selectPatt()
               mouse.accepted = true
             }
-          }
-          function selectPattern() {
-            gameView.selectPattern()
-            patternsList.hide()
           }
         }
 
@@ -104,13 +104,46 @@ Item {
           anchors.fill: parent
           mouseEnabled: false
           minimumTouchPoints: 1
-          maximumTouchPoints: 2
+          maximumTouchPoints: 1
           touchPoints: [
-            TouchPoint { id: touchPoint1 },
-            TouchPoint { id: touchPoint2 }
+            TouchPoint { id: touchPoint }
           ]
+
+          property bool wasHeld: false
+          property real releasedTime: 0
           onReleased: {
-            gameView.selectCell(touchPoint1)
+            if (pressAndHoldTimer.running && !wasHeld) {
+              gameView.selectCell(Qt.point(touchPoint.sceneX, touchPoint.sceneY))
+            }
+            pressAndHoldTimer.stop()
+            releasedTime = new Date().getTime()
+          }
+          onPressed: {
+            wasHeld = false
+            var currentTime = new Date().getTime()
+            if (currentTime - releasedTime < mouseArea.pressAndHoldInterval) {
+              if (gameView.currentPattern === undefined) {
+                gameView.selectPatt()
+                wasHeld = true
+              }
+            }
+            gameView.start = Qt.point(touchPoint.startX, touchPoint.startY)
+            pressAndHoldTimer.restart()
+          }
+          onTouchUpdated: {
+            gameView.dragField(Qt.point(touchPoint.sceneX, touchPoint.sceneY))
+          }
+          Timer {
+            id: pressAndHoldTimer
+            interval: mouseArea.pressAndHoldInterval
+            running: false
+            repeat: false
+            onTriggered: {
+              touchArea.wasHeld = true
+              if (gameView.currentPattern !== undefined) {
+                gameView.selectPatt()
+              }
+            }
           }
         }
       }

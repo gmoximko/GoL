@@ -24,7 +24,8 @@ public:
     {
       for (int y = -1; y <= 1; ++y)
       {
-        auto const index = idx(gid + Point(x, y));
+        auto const index = idx(loopPos(gid.x() + x, gid.y() + y));
+        Q_ASSERT(index < width_ * height_);
         if (index != id && input[index] != 0)
         {
           ++neighbours;
@@ -38,7 +39,7 @@ public:
 private:
   Point pos(Index id) const
   {
-    return Point(id % width_, id / height_);
+    return Point(static_cast<int>(id % width_), static_cast<int>(id / height_));
   }
   Index idx(Point pos) const
   {
@@ -46,7 +47,9 @@ private:
   }
   Point loopPos(int16_t x, int16_t y) const
   {
-    return Point((x + width_) % width_, (y + height_) % height_);
+    auto const looped_x = static_cast<int>((x + width_) % width_);
+    auto const looped_y = static_cast<int>((y + height_) % height_);
+    return Point(looped_x, looped_y);
   }
 
   Index const width_ = 0;
@@ -118,8 +121,8 @@ void CPULifeProcessor::prepareLifeUnits()
   {
     if (input_[idx] != 0)
     {
-      int x = idx % field_size_.x();
-      int y = idx / field_size_.y();
+      auto const x = static_cast<int>(idx % field_size_.x());
+      auto const y = static_cast<int>(idx / field_size_.y());
       life_units_.insert(LifeUnit(x, y));
     }
   }

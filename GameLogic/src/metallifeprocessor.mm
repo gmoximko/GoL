@@ -214,8 +214,8 @@ void GPULifeProcessor::processLife()
   {
     if ([impl unitAt: idx] != 0)
     {
-      int x = static_cast<int>(idx % field_size_.x());
-      int y = static_cast<int>(idx / field_size_.y());
+      auto const x = static_cast<int>(idx % field_size_.x());
+      auto const y = static_cast<int>(idx / field_size_.y());
       life_units_.insert(LifeUnit(x, y));
     }
   }
