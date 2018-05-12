@@ -1,10 +1,7 @@
 #ifndef CPULIFEPROCESSOR_H
 #define CPULIFEPROCESSOR_H
 
-#include <vector>
-#include <set>
 #include <cstdint>
-#include <future>
 
 #include "../gamemodel.h"
 
@@ -14,6 +11,7 @@ class CPULifeProcessor : public LifeProcessor
 {
 public:
   explicit CPULifeProcessor(QPoint field_size);
+  ~CPULifeProcessor() override;
 
   LifeUnits const& lifeUnits() const override
   {
@@ -23,7 +21,7 @@ public:
   void addUnit(LifeUnit const& unit) override;
   void processLife() override;
 
-private:
+private:  
   bool computed() const;
 
   void prepareLifeUnits();
@@ -32,11 +30,12 @@ private:
   QPoint const field_size_;
   LifeUnits life_units_;
 
-  std::vector<uint8_t> input_;
-  std::vector<uint8_t> output_;
+  class LifeProcessChunk;
+  std::vector<LifeProcessChunk> life_processes_;
+  QVector<uint8_t> input_;
+  QVector<uint8_t> output_;
 
-  std::vector<std::future<void>> futures_;
-  std::set<size_t> position_cache_;
+  QSet<decltype(input_.size())> position_cache_;
 };
 
 } // Logic

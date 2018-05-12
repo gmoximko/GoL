@@ -1,16 +1,26 @@
+#include <QThreadPool>
+#include <QDebug>
+
 #include "cpulifeprocessor.h"
 
 namespace Logic {
 
 namespace {
 
+using Buffer = QVector<uint8_t>;
+using Point = QPoint;
+using Index = int;
+
+QThreadPool& threadPool()
+{
+  auto* result = QThreadPool::globalInstance();
+  Q_ASSERT(result != nullptr);
+  return *result;
+}
+
 class LifeProcess
 {
 public:
-  using Buffer = std::vector<uint8_t>;
-  using Point = QPoint;
-  using Index = uint64_t;
-
   explicit LifeProcess(Index width, Index height)
     : width_(width)
     , height_(height)
@@ -39,7 +49,7 @@ public:
 private:
   Point pos(Index id) const
   {
-    return Point(static_cast<int>(id % width_), static_cast<int>(id / height_));
+    return Point(id % width_, id / height_);
   }
   Index idx(Point pos) const
   {
@@ -47,9 +57,7 @@ private:
   }
   Point loopPos(int16_t x, int16_t y) const
   {
-    auto const looped_x = static_cast<int>((x + width_) % width_);
-    auto const looped_y = static_cast<int>((y + height_) % height_);
-    return Point(looped_x, looped_y);
+    return Point((x + width_) % width_, (y + height_) % height_);
   }
 
   Index const width_ = 0;
@@ -58,15 +66,67 @@ private:
 
 } // namespace
 
+class CPULifeProcessor::LifeProcessChunk : public QRunnable
+{
+public:
+  explicit LifeProcessChunk(QPoint range, QPoint field_size, Buffer const& input, Buffer& output)
+    : range_(range)
+    , life_process_(field_size.x(), field_size.y())
+    , input_(input)
+    , output_(output)
+  {
+    setAutoDelete(false);
+  }
+
+  bool computed() const
+  {
+    return computed_;
+  }
+
+  void start()
+  {
+    computed_ = false;
+    threadPool().start(this);
+  }
+  void run() override
+  {
+    for (Index idx = range_.x(); idx < range_.y(); ++idx)
+    {
+      life_process_.lifeStep(input_, output_, idx);
+    }
+    computed_ = true;
+  }
+
+private:
+  QPoint const range_;
+  LifeProcess const life_process_;
+  Buffer const& input_;
+  Buffer& output_;
+  bool computed_ = true;
+};
+
 CPULifeProcessor::CPULifeProcessor(QPoint field_size)
   : field_size_(field_size)
   , input_(field_size_.x() * field_size_.y())
   , output_(field_size_.x() * field_size_.y())
-{}
+{
+  qDebug() << "Active threads: " << threadPool().activeThreadCount()
+           << " Max: threads " << threadPool().maxThreadCount();
+
+  auto const thread_count = threadPool().maxThreadCount();
+  auto const chunk_size = (field_size_.x() * field_size_.y()) / thread_count;
+  for (int idx = 0; idx < thread_count; ++idx)
+  {
+    auto const range = QPoint(chunk_size * idx, chunk_size * (idx + 1));
+    life_processes_.push_back(LifeProcessChunk(range, field_size_, input_, output_));
+  }
+}
+
+CPULifeProcessor::~CPULifeProcessor() = default;
 
 void CPULifeProcessor::addUnit(LifeUnit const& unit)
 {
-  auto const position = static_cast<size_t>(unit.x() + unit.y() * field_size_.y());
+  auto const position = unit.x() + unit.y() * field_size_.y();
   if (computed())
   {
     Q_ASSERT(position < input_.size());
@@ -86,30 +146,17 @@ void CPULifeProcessor::processLife()
     return;
   }
   handleComputeCompletion();
-
-  LifeProcess process(field_size_.x(), field_size_.y());
-  auto process_chunk = [process, this](size_t begin, size_t end)
+  for (auto& life_process : life_processes_)
   {
-    for (size_t idx = begin; idx < end; ++idx)
-    {
-      process.lifeStep(input_, output_, idx);
-    }
-  };
-
-  auto const hardware_concurrency = std::thread::hardware_concurrency();
-  auto const chunk_size = input_.size() / hardware_concurrency;
-  for (size_t idx = 0; idx < hardware_concurrency; ++idx)
-  {
-    futures_.emplace_back(
-          std::async(std::launch::async, process_chunk, chunk_size * idx, chunk_size * (idx + 1)));
+    life_process.start();
   }
 }
 
 bool CPULifeProcessor::computed() const
 {
-  return std::all_of(futures_.begin(), futures_.end(), [](std::future<void> const& future)
+  return std::all_of(life_processes_.begin(), life_processes_.end(), [](LifeProcessChunk const& chunk)
   {
-    return future.wait_for(std::chrono::seconds(0)) == std::future_status::ready;
+    return chunk.computed();
   });
 }
 
@@ -117,12 +164,12 @@ void CPULifeProcessor::prepareLifeUnits()
 {
   life_units_.clear();
 
-  for (size_t idx = 0; idx < input_.size(); ++idx)
+  for (int idx = 0; idx < input_.size(); ++idx)
   {
     if (input_[idx] != 0)
     {
-      auto const x = static_cast<int>(idx % field_size_.x());
-      auto const y = static_cast<int>(idx / field_size_.y());
+      auto const x = idx % field_size_.x();
+      auto const y = idx / field_size_.y();
       life_units_.insert(LifeUnit(x, y));
     }
   }
@@ -130,7 +177,6 @@ void CPULifeProcessor::prepareLifeUnits()
 
 void CPULifeProcessor::handleComputeCompletion()
 {
-  futures_.clear();
   input_.swap(output_);
   for (auto const& pos : position_cache_)
   {
