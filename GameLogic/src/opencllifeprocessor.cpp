@@ -61,7 +61,10 @@ public:
   {
     cl_int error = 0;
     cl::Platform platform = cl::Platform::getDefault(&error);
-    Q_ASSERT(error == 0);
+    if (error != 0)
+    {
+      throw std::runtime_error("OpenCL is not supported on this device");
+    }
     qDebug() << platform.getInfo<CL_PLATFORM_NAME>().c_str();
 
     std::vector<cl::Device> devices;

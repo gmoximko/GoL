@@ -32,8 +32,8 @@ private:
 
   class LifeProcessChunk;
   std::vector<LifeProcessChunk> life_processes_;
-  QVector<uint8_t> input_;
-  QVector<uint8_t> output_;
+  std::vector<uint8_t> input_;
+  std::vector<uint8_t> output_;
 
   QSet<decltype(input_.size())> position_cache_;
 };

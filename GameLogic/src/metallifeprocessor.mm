@@ -46,6 +46,7 @@ static NSString* const kernel_src =
 
 @interface MetalLifeProcessor : NSObject
 
+- (BOOL) computed;
 - (UInt8) unitAt: (NSUInteger)position;
 - (void) processLife;
 - (void) addUnit: (NSUInteger)position;
@@ -71,6 +72,11 @@ static NSString* const kernel_src =
   return field_size_.width * field_size_.height;
 }
 
+- (BOOL) computed
+{
+  return computed_;
+}
+
 - (UInt8) unitAt: (NSUInteger)position
 {
   assert(position < [self fieldSize]);
@@ -92,7 +98,7 @@ static NSString* const kernel_src =
     [NSException raise: NSGenericException format: @"Metal is not supported on this device"];
   }
 
-  MTLCompileOptions* options = [[MTLCompileOptions alloc] init];
+  MTLCompileOptions* options = [MTLCompileOptions new];
   options.preprocessorMacros =
       @{
         @"WIDTH" : [NSNumber numberWithUnsignedLong: field_size_.width],
@@ -121,8 +127,15 @@ static NSString* const kernel_src =
   assert(input_);
   assert(output_);
 
-  position_cache_ = [[NSMutableSet alloc] init];
+  position_cache_ = [NSMutableSet new];
+  [options dealloc];
   return self;
+}
+
+- (void) dealloc
+{
+  [position_cache_ dealloc];
+  [super dealloc];
 }
 
 - (void) processLife
@@ -196,6 +209,7 @@ catch(NSException* e)
 
 GPULifeProcessor::~GPULifeProcessor()
 {
+  while (![(id)self_ computed]);
   [(id)self_ dealloc];
 }
 

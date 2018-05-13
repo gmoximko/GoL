@@ -7,9 +7,9 @@ namespace Logic {
 
 namespace {
 
-using Buffer = QVector<uint8_t>;
+using Buffer = std::vector<uint8_t>;
 using Point = QPoint;
-using Index = int;
+using Index = size_t;
 
 QThreadPool& threadPool()
 {
@@ -49,7 +49,8 @@ public:
 private:
   Point pos(Index id) const
   {
-    return Point(id % width_, id / height_);
+    return Point(static_cast<int>(id % width_),
+                 static_cast<int>(id / height_));
   }
   Index idx(Point pos) const
   {
@@ -57,7 +58,8 @@ private:
   }
   Point loopPos(int16_t x, int16_t y) const
   {
-    return Point((x + width_) % width_, (y + height_) % height_);
+    return Point(static_cast<int>((x + width_) % width_),
+                 static_cast<int>((y + height_) % height_));
   }
 
   Index const width_ = 0;
@@ -90,7 +92,7 @@ public:
   }
   void run() override
   {
-    for (Index idx = range_.x(); idx < range_.y(); ++idx)
+    for (Index idx = range_.x(); idx < static_cast<Index>(range_.y()); ++idx)
     {
       life_process_.lifeStep(input_, output_, idx);
     }
@@ -111,7 +113,7 @@ CPULifeProcessor::CPULifeProcessor(QPoint field_size)
   , output_(field_size_.x() * field_size_.y())
 {
   qDebug() << "Active threads: " << threadPool().activeThreadCount()
-           << " Max: threads " << threadPool().maxThreadCount();
+           << " Max threads: " << threadPool().maxThreadCount();
 
   auto const thread_count = threadPool().maxThreadCount();
   auto const chunk_size = (field_size_.x() * field_size_.y()) / thread_count;
@@ -122,11 +124,14 @@ CPULifeProcessor::CPULifeProcessor(QPoint field_size)
   }
 }
 
-CPULifeProcessor::~CPULifeProcessor() = default;
+CPULifeProcessor::~CPULifeProcessor()
+{
+  while (!computed());
+}
 
 void CPULifeProcessor::addUnit(LifeUnit const& unit)
 {
-  auto const position = unit.x() + unit.y() * field_size_.y();
+  auto const position = static_cast<Index>(unit.x() + unit.y() * field_size_.y());
   if (computed())
   {
     Q_ASSERT(position < input_.size());
@@ -164,12 +169,12 @@ void CPULifeProcessor::prepareLifeUnits()
 {
   life_units_.clear();
 
-  for (int idx = 0; idx < input_.size(); ++idx)
+  for (Index idx = 0; idx < input_.size(); ++idx)
   {
     if (input_[idx] != 0)
     {
-      auto const x = idx % field_size_.x();
-      auto const y = idx / field_size_.y();
+      auto const x = static_cast<int>(idx % field_size_.x());
+      auto const y = static_cast<int>(idx / field_size_.y());
       life_units_.insert(LifeUnit(x, y));
     }
   }

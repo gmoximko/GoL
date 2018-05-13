@@ -48,6 +48,8 @@ HEADERS += \
     GameLogic/src/cpulifeprocessor.h
 
 macx|ios {
+#    QMAKE_OBJECTIVE_CFLAGS += -fobjc-arc
+#    QMAKE_OBJECTIVE_CXXFLAGS += -fobjc-arc
     LIBS += -framework Foundation -framework Metal -framework MetalKit
     OBJECTIVE_SOURCES += GameLogic/src/metallifeprocessor.mm
 }
