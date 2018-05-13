@@ -13,6 +13,9 @@ namespace Logic {
 using Points = QVector<QPoint>;
 using SizeT = int;
 
+constexpr uint32_t const c_pow_of_two_max_field_dimension = 15;
+constexpr uint8_t const c_max_player_count = 4;
+
 QPoint loopPos(QPoint point, QPoint cells);
 
 struct Pattern
@@ -26,7 +29,59 @@ struct Pattern
 using PatternPtr = QSharedPointer<Pattern const>;
 using PatternTrs = QPair<PatternPtr, QMatrix>;
 
-using LifeUnit = QPoint;
+class LifeUnit
+{
+  constexpr static uint32_t const c_coordinate_mask = (1 << c_pow_of_two_max_field_dimension) - 1;
+
+public:
+  LifeUnit(uint32_t x, uint32_t y, uint32_t player = 0)
+  {
+    Q_ASSERT(x < (1 << c_pow_of_two_max_field_dimension));
+    Q_ASSERT(y < (1 << c_pow_of_two_max_field_dimension));
+    Q_ASSERT(player < c_max_player_count);
+
+    value_ |= x;
+    value_ |= y << c_pow_of_two_max_field_dimension;
+    value_ |= player << (2 * c_pow_of_two_max_field_dimension);
+  }
+  uint16_t x() const
+  {
+    return static_cast<uint16_t>(value_ & c_coordinate_mask);
+  }
+  uint16_t y() const
+  {
+    return static_cast<uint16_t>((value_ >> c_pow_of_two_max_field_dimension) & c_coordinate_mask);
+  }
+  uint8_t player() const
+  {
+    return static_cast<uint8_t>(value_ >> (2 * c_pow_of_two_max_field_dimension));
+  }
+  bool operator == (LifeUnit rhs) const
+  {
+    return value_ == rhs.value_;
+  }
+  bool operator != (LifeUnit rhs) const
+  {
+    return !(*this == rhs);
+  }
+
+private:
+  uint32_t value_ = 0;
+};
+static_assert(sizeof(LifeUnit) == sizeof(uint32_t), "sizeof(LifeUnit)");
+
+inline uint qHash(LifeUnit unit, uint seed)
+{
+  auto hash_combine = [](uint& seed, auto value)
+  {
+    seed ^= ::qHash(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+  };
+  hash_combine(seed, unit.x());
+  hash_combine(seed, unit.y());
+  hash_combine(seed, unit.player());
+  return seed;
+}
+
 using LifeUnits = QSet<LifeUnit>;
 
 struct GameModel
@@ -42,7 +97,7 @@ struct GameModel
   virtual PatternPtr patternAt(SizeT idx) const = 0;
   virtual LifeUnits const& lifeUnits() const = 0;
 
-  virtual void addUnit(LifeUnit const& life_unit) = 0;
+  virtual void addUnit(QPoint position, uint32_t player) = 0;
   virtual void makeStep() = 0;
 };
 using GameModelPtr = QSharedPointer<GameModel const>;
@@ -53,16 +108,11 @@ struct LifeProcessor
 {
   virtual ~LifeProcessor() = default;
   virtual LifeUnits const& lifeUnits() const = 0;
-  virtual void addUnit(LifeUnit const& unit) = 0;
+  virtual void addUnit(LifeUnit unit) = 0;
   virtual void processLife() = 0;
 };
 using LifeProcessorPtr = std::unique_ptr<LifeProcessor>;
 
 } // Logic
-
-inline uint qHash(Logic::LifeUnit const& unit)
-{
-  return qHash(qMakePair(unit.x(), unit.y()));
-}
 
 #endif // GAMEMODEL_H

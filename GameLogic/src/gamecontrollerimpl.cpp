@@ -19,7 +19,7 @@ void TimerController::addPattern(PatternTrs pattern_trs)
   Q_ASSERT(pattern != nullptr);
   for (auto const& unit : pattern->points())
   {
-    game_model_->addUnit(unit * trs);
+    game_model_->addUnit(unit * trs, 0);
   }
 }
 

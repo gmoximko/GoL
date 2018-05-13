@@ -10,17 +10,29 @@ namespace View {
 
 namespace {
 
-constexpr auto pattern_selection_color = Qt::GlobalColor::yellow;
-constexpr auto pixels_per_cell = QPoint(10.0, 10.0);
-constexpr auto life_pixels_ratio = 0.3;
-constexpr auto max_cells_in_screen = 1024;
-constexpr auto min_cells_in_screen = 8;
-constexpr auto scale_to_hide_grid = 0.2;
+constexpr auto const c_pattern_selection_color = Qt::GlobalColor::yellow;
+constexpr auto const c_pixels_per_cell = QPoint(10.0, 10.0);
+constexpr auto const c_life_pixels_ratio = 0.3;
+constexpr auto const c_max_cells_in_screen = 1024;
+constexpr auto const c_min_cells_in_screen = 8;
+constexpr auto const c_scale_to_hide_grid = 0.2;
 
 template<typename T>
 T normalizeValue(T value, T min, T max)
 {
   return (value + min) / (min + max);
+}
+
+QColor playerColor(uint8_t player)
+{
+  switch (player)
+  {
+  case 0: return Qt::GlobalColor::red;
+  case 1: return Qt::GlobalColor::blue;
+  case 2: return Qt::GlobalColor::green;
+  case 3:
+  default: return Qt::GlobalColor::cyan;
+  }
 }
 
 } // namespace
@@ -65,11 +77,16 @@ void GameView::paint(QPainter* painter_ptr)
   painter.setPen(Qt::GlobalColor::white);
   painter.setRenderHint(QPainter::Antialiasing);
 
+  painter.save();
   drawLifeCells(painter);
+  painter.restore();
+
+  painter.save();
   drawSelectedCell(painter);
+  painter.restore();
 
   auto const normalized_scale = normalizeValue(field_scale_, minScale(), maxScale());
-  if (normalized_scale < scale_to_hide_grid)
+  if (normalized_scale < c_scale_to_hide_grid)
   {
     return;
   }
@@ -210,9 +227,10 @@ void GameView::drawGrid(QPainter& painter) const
 void GameView::drawLifeCells(QPainter& painter) const
 {
   painter.setBrush(QBrush(Qt::GlobalColor::white));
-  for (auto const& unit : game_model_->lifeUnits())
+  for (auto const unit : game_model_->lifeUnits())
   {
-    drawFilledCircle(painter, unit);
+    painter.setPen(playerColor(unit.player()));
+    drawFilledCircle(painter, QPoint(unit.x(), unit.y()));
   }
 }
 
@@ -229,11 +247,11 @@ void GameView::drawSelectedCell(QPainter& painter) const
     auto const cell = QPoint(trs.dx(), trs.dy());
     auto const size = QSizeF(pixelsPerCell().x(), pixelsPerCell().y());
     QRectF rect(cellToPixels(cell), size);
-    painter.fillRect(rect, QBrush(pattern_selection_color));
+    painter.fillRect(rect, QBrush(c_pattern_selection_color));
   }
   else
   {
-    painter.setBrush(QBrush(pattern_selection_color));
+    painter.setPen(c_pattern_selection_color);
     for (auto const& point : current_pattern_->points())
     {
       drawFilledCircle(painter, Logic::loopPos(point * trs, game_model_->cells()));
@@ -244,7 +262,7 @@ void GameView::drawSelectedCell(QPainter& painter) const
 void GameView::drawFilledCircle(QPainter& painter, QPoint cell) const
 {
   auto const center = cellToPixels(cell) + pixelsPerCell() / 2.0;
-  auto const radius = pixelsPerCell() * life_pixels_ratio;
+  auto const radius = pixelsPerCell() * c_life_pixels_ratio;
   painter.drawEllipse(center, radius.x(), radius.y());
 }
 
@@ -303,7 +321,7 @@ QPointF GameView::cellOffset() const
 
 QPointF GameView::pixelsPerCell() const
 {
-  return pixels_per_cell * field_scale_;
+  return c_pixels_per_cell * field_scale_;
 }
 
 QPointF GameView::cellToPixels(QPoint cell) const
@@ -323,7 +341,7 @@ QPointF GameView::loopPos(QPointF point) const
 
 qreal GameView::maxScale() const
 {
-  QPointF const min_cells = pixels_per_cell * min_cells_in_screen;
+  QPointF const min_cells = c_pixels_per_cell * c_min_cells_in_screen;
   return std::min(window()->size().width() / min_cells.x(),
                   window()->size().height() / min_cells.y());
 }
@@ -331,9 +349,9 @@ qreal GameView::maxScale() const
 qreal GameView::minScale() const
 {
   auto const cells = game_model_->cells();
-  auto const max_cells_x = std::min(cells.x(), max_cells_in_screen);
-  auto const max_cells_y = std::min(cells.y(), max_cells_in_screen);
-  QPointF const max_cells(max_cells_x * pixels_per_cell.x(), max_cells_y * pixels_per_cell.y());
+  auto const max_cells_x = std::min(cells.x(), c_max_cells_in_screen);
+  auto const max_cells_y = std::min(cells.y(), c_max_cells_in_screen);
+  QPointF const max_cells(max_cells_x * c_pixels_per_cell.x(), max_cells_y * c_pixels_per_cell.y());
   return std::max(window()->size().width() / max_cells.x(),
                   window()->size().height() / max_cells.y());
 }

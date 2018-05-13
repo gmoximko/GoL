@@ -16,7 +16,7 @@ public:
     return life_units_;
   }
 
-  void addUnit(LifeUnit const& unit) override;
+  void addUnit(LifeUnit unit) override;
   void processLife() override;
 
 private:

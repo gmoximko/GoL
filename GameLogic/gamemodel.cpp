@@ -4,7 +4,6 @@
 #include "../Utilities/qtutilities.h"
 #include "../Utilities/rleparser.h"
 #include "src/patterns.h"
-#include "src/hashlifeprocessor.h"
 #include "src/gpulifeprocessor.h"
 #include "src/cpulifeprocessor.h"
 #include "gamemodel.h"
@@ -22,16 +21,8 @@ LifeProcessorPtr makeLifeProcessor(QPoint cells)
   catch(std::exception const& e)
   {
     qDebug() << "Impossible to create GPULifeProcessor! " << e.what();
-  }
-  try
-  {
     return std::make_unique<CPULifeProcessor>(cells);
   }
-  catch(std::exception const& e)
-  {
-    qDebug() << "Impossible to create CPULifeProcessor! " << e.what();
-  }
-  return std::make_unique<HashLifeProcessor>(cells);
 }
 
 template<class PatternsStrategy = AccumulatePatterns>
@@ -72,9 +63,10 @@ public:
     return life_processor_->lifeUnits();
   }
 
-  void addUnit(LifeUnit const& life_unit) override
+  void addUnit(QPoint position, uint32_t player) override
   {
-    life_processor_->addUnit(loopPos(life_unit, cells_));
+    position = loopPos(position, cells_);
+    life_processor_->addUnit(LifeUnit(position.x(), position.y(), player));
   }
   void makeStep() override
   {

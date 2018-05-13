@@ -213,7 +213,7 @@ GPULifeProcessor::~GPULifeProcessor()
   [(id)self_ dealloc];
 }
 
-void GPULifeProcessor::addUnit(LifeUnit const& unit)
+void GPULifeProcessor::addUnit(LifeUnit unit)
 {
   [(id)self_ addUnit: (unit.x() + unit.y() * field_size_.y())];
 }

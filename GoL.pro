@@ -44,7 +44,6 @@ HEADERS += \
     GameLogic/src/gamecontrollerimpl.h \
     GameLogic/src/patterns.h \
     GameLogic/src/gpulifeprocessor.h \
-    GameLogic/src/hashlifeprocessor.h \
     GameLogic/src/cpulifeprocessor.h
 
 macx|ios {

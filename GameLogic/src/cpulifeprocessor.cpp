@@ -129,7 +129,7 @@ CPULifeProcessor::~CPULifeProcessor()
   while (!computed());
 }
 
-void CPULifeProcessor::addUnit(LifeUnit const& unit)
+void CPULifeProcessor::addUnit(LifeUnit unit)
 {
   auto const position = static_cast<Index>(unit.x() + unit.y() * field_size_.y());
   if (computed())

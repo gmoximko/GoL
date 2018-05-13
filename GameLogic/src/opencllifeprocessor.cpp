@@ -197,6 +197,11 @@ GPULifeProcessor::~GPULifeProcessor()
   delete static_cast<OpenCLLifeProcessor*>(self_);
 }
 
+void GPULifeProcessor::addUnit(LifeUnit unit)
+{
+  static_cast<OpenCLLifeProcessor*>(self_)->addUnit(unit.x() + unit.y() * field_size_.y());
+}
+
 void GPULifeProcessor::processLife()
 {
   auto* impl = static_cast<OpenCLLifeProcessor*>(self_);
@@ -214,11 +219,6 @@ void GPULifeProcessor::processLife()
   }
 
   impl->processLife();
-}
-
-void GPULifeProcessor::addUnit(LifeUnit const& unit)
-{
-  static_cast<OpenCLLifeProcessor*>(self_)->addUnit(unit.x() + unit.y() * field_size_.y());
 }
 
 } // Logic
