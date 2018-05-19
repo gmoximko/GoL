@@ -11,7 +11,7 @@ namespace View {
 namespace {
 
 constexpr auto const c_pattern_selection_color = Qt::GlobalColor::yellow;
-constexpr auto const c_pixels_per_cell = QPoint(10.0, 10.0);
+constexpr auto const c_pixels_per_cell = QPointF(10.0, 10.0);
 constexpr auto const c_life_pixels_ratio = 0.3;
 constexpr auto const c_max_cells_in_screen = 1024;
 constexpr auto const c_min_cells_in_screen = 8;
@@ -341,7 +341,7 @@ QPointF GameView::loopPos(QPointF point) const
 
 qreal GameView::maxScale() const
 {
-  QPointF const min_cells = c_pixels_per_cell * c_min_cells_in_screen;
+  auto const min_cells = c_pixels_per_cell * c_min_cells_in_screen;
   return std::min(window()->size().width() / min_cells.x(),
                   window()->size().height() / min_cells.y());
 }

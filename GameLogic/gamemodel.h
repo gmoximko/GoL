@@ -34,7 +34,7 @@ class LifeUnit
   constexpr static uint32_t const c_coordinate_mask = (1 << c_pow_of_two_max_field_dimension) - 1;
 
 public:
-  LifeUnit(uint32_t x, uint32_t y, uint32_t player = 0)
+  LifeUnit(uint16_t x, uint16_t y, uint8_t player = 0)
   {
     Q_ASSERT(x < (1 << c_pow_of_two_max_field_dimension));
     Q_ASSERT(y < (1 << c_pow_of_two_max_field_dimension));
