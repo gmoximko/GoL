@@ -1,5 +1,6 @@
 #include <QGuiApplication>
 #include <QQuickView>
+#include <QQmlEngine>
 
 #include "GameView/gameview.h"
 #include "GameView/mainwindow.h"
@@ -19,6 +20,8 @@ int main(int argc, char *argv[])
   registerQmlTypes();
 
   QQuickView view(QUrl(QStringLiteral("qrc:/main.qml")));
+  QObject::connect(view.engine(), &QQmlEngine::quit, &app, &QGuiApplication::quit);
+
   view.setResizeMode(QQuickView::SizeRootObjectToView);
   view.show();
   return app.exec();

@@ -19,7 +19,7 @@ class PatternModel
 
 public:
   PatternModel() = default;
-  PatternModel(Logic::PatternPtr const pattern_ptr)
+  explicit PatternModel(Logic::PatternPtr const pattern_ptr)
     : pattern_ptr_(pattern_ptr)
   {}
 

@@ -16,7 +16,8 @@ class MainWindow : public QQuickItem
 
 public:
   using QQuickItem::QQuickItem;
-  Q_INVOKABLE void createGame();
+  Q_INVOKABLE QQuickItem* createGame();
+  Q_INVOKABLE bool destroyGame();
 
 private:
   void createGameModel();
@@ -26,6 +27,7 @@ private:
   Logic::GameModelMutablePtr game_model_;
   Logic::GameControllerPtr game_controller_;
   View::GameViewPtr game_view_;
+  QScopedPointer<QQuickItem> game_window_;
 
   // Game parameters
   QPoint cells_;

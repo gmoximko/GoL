@@ -1,6 +1,6 @@
 <RCC>
     <qresource prefix="/">
-        <file>GameWindow.qml</file>
+        <file>gamewindow.qml</file>
         <file>main.qml</file>
         <file>example.qml</file>
     </qresource>

@@ -1,6 +1,5 @@
 import QtQuick 2.10
 import QtQuick.Window 2.10
-import QtQuick.Controls 1.4
 import QtQuick.Controls 2.3
 import GoL 1.0
 
@@ -10,83 +9,180 @@ MainWindow {
   width: Screen.desktopAvailableWidth
   height: Screen.desktopAvailableHeight
 
-  Item {
-    id: mainMenu
+  function createGameInstance(cells) {
+    mainWindow.cells = cells
+    var game_view = mainWindow.createGame()
+    game_view.width = mainMenu.width
+    game_view.height = mainMenu.height
+    mainMenu.push(game_view)
+  }
+
+  Page {
     anchors.fill: parent
 
-    SwipeView {
-      id: swipeView
-      anchors.fill: parent
-      currentIndex: indicator.currentIndex
+    header: ToolBar {
+      id: toolBar
+      contentHeight: toolButton.implicitHeight
 
-      Page {
-        id: joinRoom
-
-        header: Label {
-          text: qsTr("Join room")
-          fontSizeMode: Text.Fit
-          verticalAlignment: Text.AlignVCenter
-          horizontalAlignment: Text.AlignHCenter
-        }
-
-        footer: Button {
-          height: 70
-          text: qsTr("Join")
-          onPressed: {}
+      ToolButton {
+        id: toolButton
+        text: mainMenu.depth > 1 ? "\u25C0" : "\u2630"
+        font.pixelSize: Qt.application.font.pixelSize * 1.6
+        onClicked: {
+          if (mainMenu.depth > 1) {
+            mainMenu.back()
+          } else {
+            drawer.open()
+          }
         }
       }
 
-      Page {
-        id: createRoom
-
-        header: Label {
-          text: qsTr("Create room")
-          fontSizeMode: Text.Fit
-          verticalAlignment: Text.AlignVCenter
-          horizontalAlignment: Text.AlignHCenter
-        }
-
-        ComboBox {
-          id: comboBox
-          clip: true
-          visible: true
-          anchors.fill: parent
-          currentIndex: 1
-          model: ListModel {
-            ListElement { cells: 512 }
-            ListElement { cells: 1024 }
-            ListElement { cells: 2048 }
-            ListElement { cells: 4096 }
-            ListElement { cells: 8192 }
-          }
-        }
-
-        footer: Button {
-          height: 70
-          text: qsTr("Create")
-          onPressed: {
-            createGameInstance(Qt.point(comboBox.currentText, comboBox.currentText))
-          }
-        }
+      Label {
+//        text: mainMenu.currentItem.title
+        anchors.centerIn: parent
       }
     }
 
-    PageIndicator {
-      id: indicator
+    StackView {
+      id: mainMenu
+      width: mainWindow.width
+      height: mainWindow.height - toolBar.contentHeight
 
-      currentIndex: swipeView.currentIndex
-      count: swipeView.count
+      function back() {
+        mainMenu.pop()
+        if (mainWindow.destroyGame()) {}
+      }
 
-      anchors.bottom: swipeView.bottom
-      anchors.horizontalCenter: swipeView.horizontalCenter
+      Keys.onReleased: {
+        if (event.key === Qt.Key_Back && mainMenu.depth > 1) {
+          event.accepted = true
+          mainMenu.back()
+        }
+      }
+      initialItem: Item {}
     }
   }
 
-  function createGameInstance(cells) {
-    mainWindow.cells = cells
-    mainWindow.createGame()
-    mainMenu.enabled = false
-    mainMenu.visible = false
+  Drawer {
+    id: drawer
+    width: mainWindow.width * 0.66
+    height: mainWindow.height
+
+    Column {
+      anchors.fill: parent
+
+      ItemDelegate {
+        text: qsTr("Single player")
+        width: parent.width
+        onClicked: {
+          mainMenu.push(singlePlayerMenu)
+          drawer.close()
+        }
+      }
+      ItemDelegate {
+        text: qsTr("Multiplayer")
+        width: parent.width
+        onClicked: {
+          mainMenu.push(multiplayerMenu)
+          drawer.close()
+        }
+      }
+      ItemDelegate {
+        text: qsTr("Quit")
+        width: parent.width
+        onClicked: {
+          Qt.quit()
+        }
+      }
+    }
+  }
+
+  Component {
+    id: singlePlayerMenu
+
+    Page {
+      title: qsTr("Single player")
+      ComboBox {
+        id: fieldSize
+        clip: true
+        visible: true
+        anchors.centerIn: parent
+        currentIndex: 1
+        model: ListModel {
+          ListElement { cells: 512 }
+          ListElement { cells: 1024 }
+          ListElement { cells: 2048 }
+          ListElement { cells: 4096 }
+          ListElement { cells: 8192 }
+        }
+      }
+
+      footer: Button {
+        height: 70
+        text: qsTr("Start")
+        onPressed: {
+          createGameInstance(Qt.point(fieldSize.currentText, fieldSize.currentText))
+        }
+      }
+    }
+  }
+  Component {
+    id: multiplayerMenu
+
+    Item {
+      SwipeView {
+        id: swipeView
+        anchors.fill: parent
+        currentIndex: indicator.currentIndex
+
+        Page {
+          id: joinRoom
+
+          footer: Button {
+            height: 70
+            text: qsTr("Join")
+            onPressed: {}
+          }
+        }
+
+        Page {
+          id: createRoom
+
+          ComboBox {
+            id: fieldSize
+            clip: true
+            visible: true
+            anchors.centerIn: parent
+            currentIndex: 1
+            model: ListModel {
+              ListElement { cells: 512 }
+              ListElement { cells: 1024 }
+              ListElement { cells: 2048 }
+              ListElement { cells: 4096 }
+              ListElement { cells: 8192 }
+            }
+          }
+
+          footer: Button {
+            height: 70
+            text: qsTr("Create")
+            onPressed: {
+              createGameInstance(Qt.point(fieldSize.currentText, fieldSize.currentText))
+            }
+          }
+        }
+      }
+
+      PageIndicator {
+        id: indicator
+
+        currentIndex: swipeView.currentIndex
+        count: swipeView.count
+
+        anchors.bottom: swipeView.bottom
+        anchors.horizontalCenter: swipeView.horizontalCenter
+      }
+    }
   }
 }
 

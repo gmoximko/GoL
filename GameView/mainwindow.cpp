@@ -7,7 +7,7 @@
 
 namespace View {
 
-void MainWindow::createGame()
+QQuickItem* MainWindow::createGame()
 {
   createGameModel();
   createGameView();
@@ -19,6 +19,17 @@ void MainWindow::createGame()
   {
     game_view_->update();
   });
+  return game_window_.data();
+}
+
+bool MainWindow::destroyGame()
+{
+  auto const result = game_window_.isNull();
+  game_model_ = nullptr;
+  game_window_.reset(nullptr);
+  Q_ASSERT(game_controller_.isNull());
+  Q_ASSERT(game_view_.isNull());
+  return !result;
 }
 
 void MainWindow::createGameModel()
@@ -29,14 +40,16 @@ void MainWindow::createGameModel()
 void MainWindow::createGameController()
 {
   Q_ASSERT(game_model_ != nullptr);
-  game_controller_ = Logic::createGameController(this, { game_model_ });
+  Q_ASSERT(game_window_ != nullptr);
+  game_controller_ = Logic::createGameController(game_window_.data(), { game_model_ });
 }
 
 void MainWindow::createGameView()
 {
   QQmlEngine* engine = qmlEngine(this);
-  QQmlComponent component(engine, QUrl(QStringLiteral("qrc:/GameWindow.qml")));
+  QQmlComponent component(engine, QUrl(QStringLiteral("qrc:/gamewindow.qml")));
   auto* object = qobject_cast<QQuickItem*>(component.beginCreate(qmlContext(this)));
+  QQmlEngine::setObjectOwnership(object, QQmlEngine::CppOwnership);
   object->setParentItem(this);
   object->setParent(this);
 
@@ -44,6 +57,7 @@ void MainWindow::createGameView()
   Q_ASSERT(game_view_ != nullptr);
   Q_ASSERT(game_model_ != nullptr);
   game_view_->initialize(game_model_);
+  game_window_.reset(object);
 
   component.completeCreate();
 }
