@@ -12,15 +12,13 @@ struct GameController : public QObject
   Q_OBJECT
 
 public:
-  explicit GameController(QObject* parent = nullptr)
-    : QObject(parent)
-  {}
-
   struct Params
   {
     GameModelMutablePtr game_model_;
-    uint update_time_ = 100;
+    int update_time_ = 100;
   };
+
+  using QObject::QObject;
 
 public slots:
   virtual void addPattern(PatternTrs pattern_trs) = 0;

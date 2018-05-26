@@ -7,6 +7,31 @@
 
 namespace View {
 
+MainWindow::MainWindow(QQuickItem* parent)
+  : QQuickItem(parent)
+{
+  try
+  {
+    game_network_ = Network::createGameNetwork(this, {});
+    if (game_network_ == nullptr)
+    {
+      emit qmlEngine(this)->quit();
+    }
+    else
+    {
+      connect(game_network_.data(), &Network::GameNetwork::lobbiesUpdated, [this](Network::Lobbies lobbies)
+      {
+        auto* root_context = qmlEngine(this)->rootContext();
+        root_context->setContextProperty("lobbyList", QVariant::fromValue(lobbies));
+      });
+    }
+  }
+  catch(std::exception const& e)
+  {
+    qDebug() << e.what();
+  }
+}
+
 QQuickItem* MainWindow::createGame()
 {
   createGameModel();

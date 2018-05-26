@@ -40,9 +40,9 @@ public:
     Q_ASSERT(y < (1 << c_pow_of_two_max_field_dimension));
     Q_ASSERT(player < c_max_player_count);
 
-    value_ |= x;
-    value_ |= y << c_pow_of_two_max_field_dimension;
-    value_ |= player << (2 * c_pow_of_two_max_field_dimension);
+    value_ |= static_cast<uint32_t>(x);
+    value_ |= static_cast<uint32_t>(y) << c_pow_of_two_max_field_dimension;
+    value_ |= static_cast<uint32_t>(player) << (2 * c_pow_of_two_max_field_dimension);
   }
   uint16_t x() const
   {

@@ -85,7 +85,7 @@ private:
   void drawFilledCircle(QPainter& painer, QPoint cell) const;
   void drawCoordinates(QPainter& painter) const;
 
-  QPoint fieldSize() const;
+  QPointF fieldSize() const;
   QPoint cellsOnTheScreen() const;
   QPointF cellOffset() const;
   QPointF pixelsPerCell() const;

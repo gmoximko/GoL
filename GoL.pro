@@ -18,7 +18,8 @@ SOURCES += main.cpp \
     Utilities/rleparser.cpp \
     GameLogic/gamemodel.cpp \
     GameLogic/src/gamecontrollerimpl.cpp \
-    GameLogic/src/cpulifeprocessor.cpp
+    GameLogic/src/cpulifeprocessor.cpp \
+    Network/src/steamnetwork.cpp
 
 RESOURCES += qml.qrc \
              patterns.qrc
@@ -44,7 +45,9 @@ HEADERS += \
     GameLogic/src/gamecontrollerimpl.h \
     GameLogic/src/patterns.h \
     GameLogic/src/gpulifeprocessor.h \
-    GameLogic/src/cpulifeprocessor.h
+    GameLogic/src/cpulifeprocessor.h \
+    Network/gamenetwork.h \
+    Network/src/steamnetwork.h
 
 macx|ios {
 #    QMAKE_OBJECTIVE_CFLAGS += -fobjc-arc
@@ -52,7 +55,14 @@ macx|ios {
     LIBS += -framework Foundation -framework Metal -framework MetalKit
     OBJECTIVE_SOURCES += GameLogic/src/metallifeprocessor.mm
 }
-else:unix|win32 {
+else: unix|win32 {
     LIBS += -lOpenCL
     SOURCES += GameLogic/src/opencllifeprocessor.cpp
 }
+
+win32:CONFIG(release, debug|release): LIBS += -L$$PWD/redistributable_bin/osx32/release/ -lsteam_api
+else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/redistributable_bin/osx32/debug/ -lsteam_api
+else:unix: LIBS += -L$$PWD/redistributable_bin/osx32/ -lsteam_api
+
+INCLUDEPATH += $$PWD/redistributable_bin/osx32
+DEPENDPATH += $$PWD/redistributable_bin/osx32

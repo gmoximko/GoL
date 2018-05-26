@@ -302,10 +302,10 @@ void GameView::drawCoordinates(QPainter& painter) const
   }
 }
 
-QPoint GameView::fieldSize() const
+QPointF GameView::fieldSize() const
 {
-  return QPoint(fieldCells().x() * pixelsPerCell().x(),
-                fieldCells().y() * pixelsPerCell().y());
+  return QPointF(fieldCells().x() * pixelsPerCell().x(),
+                 fieldCells().y() * pixelsPerCell().y());
 }
 
 QPoint GameView::cellsOnTheScreen() const

@@ -138,6 +138,18 @@ MainWindow {
         Page {
           id: joinRoom
 
+          ListView {
+            anchors.fill: parent
+            model: lobbyList
+            delegate: Rectangle {
+              height: 25
+              width: 100
+              Text {
+                text: model.modelData.name + " " + model.modelData.lobbyId
+              }
+            }
+          }
+
           footer: Button {
             height: 70
             text: qsTr("Join")
@@ -167,7 +179,7 @@ MainWindow {
             height: 70
             text: qsTr("Create")
             onPressed: {
-              createGameInstance(Qt.point(fieldSize.currentText, fieldSize.currentText))
+              createLobby()
             }
           }
         }
