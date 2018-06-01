@@ -2,6 +2,7 @@
 #include <QQmlContext>
 #include <QScopedPointer>
 
+#include "../GameLogic/gameparameters.h"
 #include "../Utilities/qtutilities.h"
 #include "mainwindow.h"
 
@@ -9,10 +10,11 @@ namespace View {
 
 MainWindow::MainWindow(QQuickItem* parent)
   : QQuickItem(parent)
+  , game_params_(new Logic::GameParamsQmlAdaptor(this))
 {
   try
   {
-    game_network_ = Network::createGameNetwork(this, {});
+    game_network_ = Network::createGameNetwork(this, game_params_);
     if (game_network_ == nullptr)
     {
       emit qmlEngine(this)->quit();
@@ -57,16 +59,28 @@ bool MainWindow::destroyGame()
   return !result;
 }
 
+void MainWindow::createLobby()
+{
+  game_network_->createLobby();
+}
+
+void MainWindow::joinLobby(Logic::LobbyId lobby_id)
+{
+  game_network_->joinLobby(lobby_id);
+}
+
 void MainWindow::createGameModel()
 {
-  game_model_ = Logic::createGameModel({ cells_ });
+  game_model_ = Logic::createGameModel({ game_params_->fieldSize() });
 }
 
 void MainWindow::createGameController()
 {
   Q_ASSERT(game_model_ != nullptr);
   Q_ASSERT(game_window_ != nullptr);
-  game_controller_ = Logic::createGameController(game_window_.data(), { game_model_ });
+//  Q_ASSERT(current_player_ < Logic::c_max_player_count);
+  game_controller_ = Logic::createGameController(game_window_.data(),
+    { game_model_, game_params_->gameSpeed() });
 }
 
 void MainWindow::createGameView()

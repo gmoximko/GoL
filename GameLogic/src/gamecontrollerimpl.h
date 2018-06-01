@@ -22,6 +22,7 @@ private:
   void makeStep();
 
   int const step_timer_id_ = 0;
+  PlayerId const current_player_ = 0;
   GameModelMutablePtr game_model_;
 };
 

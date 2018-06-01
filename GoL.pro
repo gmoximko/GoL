@@ -47,7 +47,8 @@ HEADERS += \
     GameLogic/src/gpulifeprocessor.h \
     GameLogic/src/cpulifeprocessor.h \
     Network/gamenetwork.h \
-    Network/src/steamnetwork.h
+    Network/src/steamnetwork.h \
+    GameLogic/gameparameters.h
 
 macx|ios {
 #    QMAKE_OBJECTIVE_CFLAGS += -fobjc-arc

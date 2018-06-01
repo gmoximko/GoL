@@ -7,6 +7,7 @@ namespace Logic {
 TimerController::TimerController(QObject* parent, Params const& params)
   : GameController(parent)
   , step_timer_id_(startTimer(params.update_time_, Qt::TimerType::PreciseTimer))
+  , current_player_(params.current_player_)
   , game_model_(params.game_model_)
 {
   Q_ASSERT(step_timer_id_ != 0);
@@ -19,7 +20,7 @@ void TimerController::addPattern(PatternTrs pattern_trs)
   Q_ASSERT(pattern != nullptr);
   for (auto const& unit : pattern->points())
   {
-    game_model_->addUnit(unit * trs, 0);
+    game_model_->addUnit(unit * trs, current_player_);
   }
 }
 

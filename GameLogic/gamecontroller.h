@@ -16,6 +16,7 @@ public:
   {
     GameModelMutablePtr game_model_;
     int update_time_ = 100;
+    PlayerId current_player_ = 0;
   };
 
   using QObject::QObject;

@@ -10,7 +10,7 @@ MainWindow {
   height: Screen.desktopAvailableHeight
 
   function createGameInstance(cells) {
-    mainWindow.cells = cells
+    gameParams.fieldSize = cells
     var game_view = mainWindow.createGame()
     game_view.width = mainMenu.width
     game_view.height = mainMenu.height

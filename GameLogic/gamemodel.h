@@ -12,9 +12,10 @@ namespace Logic {
 
 using Points = QVector<QPoint>;
 using SizeT = int;
+using PlayerId = uint8_t;
 
 constexpr uint32_t const c_pow_of_two_max_field_dimension = 15;
-constexpr uint8_t const c_max_player_count = 4;
+constexpr PlayerId const c_max_player_count = 4;
 
 QPoint loopPos(QPoint point, QPoint cells);
 
@@ -34,7 +35,7 @@ class LifeUnit
   constexpr static uint32_t const c_coordinate_mask = (1 << c_pow_of_two_max_field_dimension) - 1;
 
 public:
-  LifeUnit(uint16_t x, uint16_t y, uint8_t player = 0)
+  LifeUnit(uint16_t x, uint16_t y, PlayerId player = 0)
   {
     Q_ASSERT(x < (1 << c_pow_of_two_max_field_dimension));
     Q_ASSERT(y < (1 << c_pow_of_two_max_field_dimension));
@@ -52,9 +53,9 @@ public:
   {
     return static_cast<uint16_t>((value_ >> c_pow_of_two_max_field_dimension) & c_coordinate_mask);
   }
-  uint8_t player() const
+  PlayerId player() const
   {
-    return static_cast<uint8_t>(value_ >> (2 * c_pow_of_two_max_field_dimension));
+    return static_cast<PlayerId>(value_ >> (2 * c_pow_of_two_max_field_dimension));
   }
   bool operator == (LifeUnit rhs) const
   {
