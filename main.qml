@@ -82,6 +82,7 @@ MainWindow {
       ItemDelegate {
         text: qsTr("Multiplayer")
         width: parent.width
+        enabled: isNetworkEnabled()
         onClicked: {
           mainMenu.push(multiplayerMenu)
           drawer.close()
@@ -108,13 +109,7 @@ MainWindow {
         visible: true
         anchors.centerIn: parent
         currentIndex: 1
-        model: ListModel {
-          ListElement { cells: 512 }
-          ListElement { cells: 1024 }
-          ListElement { cells: 2048 }
-          ListElement { cells: 4096 }
-          ListElement { cells: 8192 }
-        }
+        model: [512, 1024, 2048, 4096, 8192]
       }
 
       footer: Button {
@@ -141,11 +136,33 @@ MainWindow {
           ListView {
             anchors.fill: parent
             model: lobbyList
-            delegate: Rectangle {
-              height: 25
-              width: 100
-              Text {
-                text: model.modelData.name + " " + model.modelData.lobbyId
+            delegate: Item {
+              width: parent.width
+              height: 40
+              MouseArea {
+                anchors.fill: parent
+                onClicked: {
+                  joinLobby(model.modelData)
+                }
+              }
+              Row {
+                spacing: 10
+                Text {
+                  anchors.verticalCenter: parent.verticalCenter
+                  text: model.modelData.name
+                }
+                Text {
+                  anchors.verticalCenter: parent.verticalCenter
+                  text: "%1 %2".arg(model.modelData.fieldSize.x).arg(model.modelData.fieldSize.y)
+                }
+                Text {
+                  anchors.verticalCenter: parent.verticalCenter
+                  text: model.modelData.gameSpeed
+                }
+                Text {
+                  anchors.verticalCenter: parent.verticalCenter
+                  text: model.modelData.playerCount
+                }
               }
             }
           }
@@ -159,26 +176,43 @@ MainWindow {
 
         Page {
           id: createRoom
-
-          ComboBox {
-            id: fieldSize
-            clip: true
-            visible: true
+          Column {
             anchors.centerIn: parent
-            currentIndex: 1
-            model: ListModel {
-              ListElement { cells: 512 }
-              ListElement { cells: 1024 }
-              ListElement { cells: 2048 }
-              ListElement { cells: 4096 }
-              ListElement { cells: 8192 }
+            TextField {
+              id: lobbyName
+              text: Lobby
+              placeholderText: qsTr("Enter lobby name")
+            }
+            ComboBox {
+              id: fieldSize
+              clip: true
+              visible: true
+              currentIndex: 1
+              model: [512, 1024, 2048, 4096, 8192]
+            }
+            ComboBox {
+              id: playerCount
+              clip: true
+              visible: true
+              currentIndex: 1
+              model: [1, 2, 3, 4]
+            }
+            ComboBox {
+              id: gameSpeed
+              clip: true
+              visible: true
+              currentIndex: 1
+              model: [50, 100, 200, 300, 400, 500]
             }
           }
-
           footer: Button {
             height: 70
             text: qsTr("Create")
             onPressed: {
+              gameParams.name = lobbyName.text
+              gameParams.fieldSize = Qt.point(fieldSize.currentText, fieldSize.currentText)
+              gameParams.playerCount = Number(playerCount.currentText)
+              gameParams.gameSpeed = Number(gameSpeed.currentText)
               createLobby()
             }
           }

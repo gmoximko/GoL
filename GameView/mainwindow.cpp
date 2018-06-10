@@ -2,7 +2,6 @@
 #include <QQmlContext>
 #include <QScopedPointer>
 
-#include "../GameLogic/gameparameters.h"
 #include "../Utilities/qtutilities.h"
 #include "mainwindow.h"
 
@@ -10,11 +9,11 @@ namespace View {
 
 MainWindow::MainWindow(QQuickItem* parent)
   : QQuickItem(parent)
-  , game_params_(new Logic::GameParamsQmlAdaptor(this))
+  , game_params_(new GameParams(this))
 {
   try
   {
-    game_network_ = Network::createGameNetwork(this, game_params_);
+    game_network_ = Network::createGameNetwork(this, game_params_->getParams());
     if (game_network_ == nullptr)
     {
       emit qmlEngine(this)->quit();
@@ -26,6 +25,7 @@ MainWindow::MainWindow(QQuickItem* parent)
         auto* root_context = qmlEngine(this)->rootContext();
         root_context->setContextProperty("lobbyList", QVariant::fromValue(lobbies));
       });
+      connect(game_network_.data(), &Network::GameNetwork::lobbyReady, []{ qDebug() << "Lobby Ready!"; });
     }
   }
   catch(std::exception const& e)
@@ -64,9 +64,10 @@ void MainWindow::createLobby()
   game_network_->createLobby();
 }
 
-void MainWindow::joinLobby(Logic::LobbyId lobby_id)
+void MainWindow::joinLobby(QVariant const& lobby)
 {
-  game_network_->joinLobby(lobby_id);
+  auto const lobby_params =  lobby.value<Network::LobbyParams>();
+  game_network_->joinLobby(lobby_params.lobby_id_);
 }
 
 void MainWindow::createGameModel()
