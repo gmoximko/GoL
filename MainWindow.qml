@@ -9,12 +9,11 @@ MainWindow {
   width: Screen.desktopAvailableWidth
   height: Screen.desktopAvailableHeight
 
-  function createGameInstance(cells) {
-    gameParams.fieldSize = cells
-    var game_view = mainWindow.createGame()
-    game_view.width = mainMenu.width
-    game_view.height = mainMenu.height
-    mainMenu.push(game_view)
+  function createGameInstance(gameParams) {
+    var gameView = mainWindow.createGame(gameParams)
+    gameView.width = mainMenu.width
+    gameView.height = mainMenu.height
+    mainMenu.push(gameView)
   }
 
   Page {
@@ -75,7 +74,7 @@ MainWindow {
         text: qsTr("Single player")
         width: parent.width
         onClicked: {
-          mainMenu.push(singlePlayerMenu)
+          mainMenu.push(singleplayerMenu)
           drawer.close()
         }
       }
@@ -99,28 +98,24 @@ MainWindow {
   }
 
   Component {
-    id: singlePlayerMenu
+    id: singleplayerMenu
 
     Page {
-      title: qsTr("Single player")
-      ComboBox {
-        id: fieldSize
-        clip: true
-        visible: true
-        anchors.centerIn: parent
-        currentIndex: 1
-        model: [512, 1024, 2048, 4096, 8192]
+      GameParameters {
+        id: gameParams
       }
+      title: qsTr("Single player")
 
       footer: Button {
         height: 70
         text: qsTr("Start")
         onPressed: {
-          createGameInstance(Qt.point(fieldSize.currentText, fieldSize.currentText))
+          createGameInstance(gameParams.params)
         }
       }
     }
   }
+
   Component {
     id: multiplayerMenu
 
@@ -176,44 +171,16 @@ MainWindow {
 
         Page {
           id: createRoom
-          Column {
-            anchors.centerIn: parent
-            TextField {
-              id: lobbyName
-              text: Lobby
-              placeholderText: qsTr("Enter lobby name")
-            }
-            ComboBox {
-              id: fieldSize
-              clip: true
-              visible: true
-              currentIndex: 1
-              model: [512, 1024, 2048, 4096, 8192]
-            }
-            ComboBox {
-              id: playerCount
-              clip: true
-              visible: true
-              currentIndex: 1
-              model: [1, 2, 3, 4]
-            }
-            ComboBox {
-              id: gameSpeed
-              clip: true
-              visible: true
-              currentIndex: 1
-              model: [50, 100, 200, 300, 400, 500]
-            }
+
+          GameParameters {
+            id: gameParams
+            isMultiplayer: true
           }
           footer: Button {
             height: 70
             text: qsTr("Create")
             onPressed: {
-              gameParams.name = lobbyName.text
-              gameParams.fieldSize = Qt.point(fieldSize.currentText, fieldSize.currentText)
-              gameParams.playerCount = Number(playerCount.currentText)
-              gameParams.gameSpeed = Number(gameSpeed.currentText)
-              createLobby()
+              createLobby(gameParams.params)
             }
           }
         }

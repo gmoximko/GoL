@@ -12,11 +12,11 @@ class SteamNetwork : public GameNetwork
   Q_OBJECT
 
 public:
-  explicit SteamNetwork(QObject* parent, LobbyParams& lobby_params);
+  explicit SteamNetwork(QObject* parent);
   ~SteamNetwork() override;
 
-  void createLobby() override;
-  void joinLobby(LobbyId lobby_id) override;
+  void createLobby(LobbyParams const& params) override;
+  void joinLobby(LobbyParams const& params) override;
 
 protected:
   void timerEvent(QTimerEvent* event) override;
@@ -26,19 +26,14 @@ private:
   void onLobbyCreated(LobbyCreated_t* callback, bool failure);
   void onLobbyEntered(LobbyEnter_t* callback, bool failure);
   void requestLobbies();
-  void checkLobbyReady();
 
   int const callback_timer_id_ = 0;
+  bool requesting_lobbies_ = false;
+  LobbyParams lobby_params_;
 
   CCallResult<SteamNetwork, LobbyMatchList_t> on_lobby_list_matched_;
   CCallResult<SteamNetwork, LobbyCreated_t> on_lobby_created_;
   CCallResult<SteamNetwork, LobbyEnter_t> on_lobby_entered_;
-
-  class Lobby;
-  using LobbyPtr = std::unique_ptr<Lobby>;
-  LobbyPtr lobby_;
-  LobbyParams& lobby_params_;
-  bool requesting_lobbies_ = false;
 };
 
 } // Network

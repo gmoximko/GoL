@@ -31,6 +31,13 @@ public:
 };
 using Lobbies = QVariantList;
 
+struct Lobby
+{
+  virtual ~Lobby() = default;
+  virtual bool ready() const = 0;
+};
+using LobbyPtr = QSharedPointer<Lobby>;
+
 class GameNetwork : public QObject
 {
   Q_OBJECT
@@ -38,15 +45,24 @@ class GameNetwork : public QObject
 public:
   using QObject::QObject;
 
-  virtual void createLobby() = 0;
-  virtual void joinLobby(LobbyId lobby_id) = 0;
+  virtual void createLobby(LobbyParams const& params) = 0;
+  virtual void joinLobby(LobbyParams const& params) = 0;
 
 signals:
-  void lobbyReady();
-  void lobbiesUpdated(Lobbies lobbies);
+  void lobbyCreated(LobbyPtr);
+  void lobbiesUpdated(Lobbies);
 };
 using GameNetworkPtr = QPointer<GameNetwork>;
-GameNetworkPtr createGameNetwork(QObject* parent, LobbyParams& lobby_params);
+GameNetworkPtr createGameNetwork(QObject* parent);
+
+inline bool operator == (LobbyParams const& lhs, LobbyParams const& rhs)
+{
+  return lhs.lobby_id_ == rhs.lobby_id_
+      && lhs.name_ == rhs.name_
+      && lhs.field_size_ == rhs.field_size_
+      && lhs.game_speed_ == rhs.game_speed_
+      && lhs.player_count_ == rhs.player_count_;
+}
 
 } // Network
 

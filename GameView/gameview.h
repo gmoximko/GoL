@@ -56,6 +56,7 @@ class GameView : public QQuickPaintedItem
 
 public:
   using QQuickPaintedItem::QQuickPaintedItem;
+  ~GameView() override;
 
   QVariant currentPattern() const;
   Logic::SizeT patternCount() const;

@@ -1,5 +1,5 @@
 QT += quick
-CONFIG += c++14
+CONFIG += c++14 app_bundle
 
 # The following define makes your compiler emit warnings if you use
 # any feature of Qt which as been marked deprecated (the exact warnings
@@ -60,9 +60,10 @@ else: unix|win32 {
     SOURCES += GameLogic/src/opencllifeprocessor.cpp
 }
 
-win32:CONFIG(release, debug|release): LIBS += -L$$PWD/redistributable_bin/osx32/release/ -lsteam_api
-else:win32:CONFIG(debug, debug|release): LIBS += -L$$PWD/redistributable_bin/osx32/debug/ -lsteam_api
-else:unix: LIBS += -L$$PWD/redistributable_bin/osx32/ -lsteam_api
+steamLib.files = $$PWD/redistributable_bin/osx32/
+steamLib.path = Contents/MacOS/
+QMAKE_BUNDLE_DATA += steamLib
 
+macx: LIBS += -L$$PWD/redistributable_bin/osx32/ -lsteam_api
 INCLUDEPATH += $$PWD/redistributable_bin/osx32
 DEPENDPATH += $$PWD/redistributable_bin/osx32

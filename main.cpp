@@ -20,7 +20,7 @@ int main(int argc, char *argv[])
   QGuiApplication app(argc, argv);
   registerQmlTypes();
 
-  QQuickView view(QUrl(QStringLiteral("qrc:/main.qml")));
+  QQuickView view(QUrl(QStringLiteral("qrc:/MainWindow.qml")));
   QObject::connect(view.engine(), &QQmlEngine::quit, &app, &QGuiApplication::quit);
 
   view.setResizeMode(QQuickView::SizeRootObjectToView);

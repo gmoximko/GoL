@@ -37,6 +37,11 @@ QColor playerColor(uint8_t player)
 
 } // namespace
 
+GameView::~GameView()
+{
+  qDebug() << "~GameView()";
+}
+
 QVariant GameView::currentPattern() const
 {
   return current_pattern_ == nullptr

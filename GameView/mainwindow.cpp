@@ -1,6 +1,7 @@
 #include <QQmlEngine>
 #include <QQmlContext>
 #include <QScopedPointer>
+#include <QGuiApplication>
 
 #include "../Utilities/qtutilities.h"
 #include "mainwindow.h"
@@ -9,14 +10,13 @@ namespace View {
 
 MainWindow::MainWindow(QQuickItem* parent)
   : QQuickItem(parent)
-  , game_params_(new GameParams(this))
 {
   try
   {
-    game_network_ = Network::createGameNetwork(this, game_params_->getParams());
+    game_network_ = Network::createGameNetwork(this);
     if (game_network_ == nullptr)
     {
-      emit qmlEngine(this)->quit();
+      QGuiApplication::quit();
     }
     else
     {
@@ -25,7 +25,6 @@ MainWindow::MainWindow(QQuickItem* parent)
         auto* root_context = qmlEngine(this)->rootContext();
         root_context->setContextProperty("lobbyList", QVariant::fromValue(lobbies));
       });
-      connect(game_network_.data(), &Network::GameNetwork::lobbyReady, []{ qDebug() << "Lobby Ready!"; });
     }
   }
   catch(std::exception const& e)
@@ -34,11 +33,12 @@ MainWindow::MainWindow(QQuickItem* parent)
   }
 }
 
-QQuickItem* MainWindow::createGame()
+QQuickItem* MainWindow::createGame(GameParams* params)
 {
-  createGameModel();
-  createGameView();
-  createGameController();
+  Q_ASSERT(params != nullptr);
+  createGameModel(*params);
+  createGameView(*params);
+  createGameController(*params);
 
   connect(game_view_.data(), &GameView::patternSelected,
           game_controller_.data(), &Logic::GameController::addPattern);
@@ -59,35 +59,38 @@ bool MainWindow::destroyGame()
   return !result;
 }
 
-void MainWindow::createLobby()
+void MainWindow::createLobby(GameParams* params)
 {
-  game_network_->createLobby();
+  connect(game_network_.data(), &Network::GameNetwork::lobbyCreated,
+          params, &GameParams::setLobby, Qt::UniqueConnection);
+  game_network_->createLobby(params->getParams());
 }
 
-void MainWindow::joinLobby(QVariant const& lobby)
+void MainWindow::joinLobby(GameParams* params)
 {
-  auto const lobby_params =  lobby.value<Network::LobbyParams>();
-  game_network_->joinLobby(lobby_params.lobby_id_);
+  connect(game_network_.data(), &Network::GameNetwork::lobbyCreated,
+          params, &GameParams::setLobby, Qt::UniqueConnection);
+  game_network_->joinLobby(params->getParams());
 }
 
-void MainWindow::createGameModel()
+void MainWindow::createGameModel(GameParams const& params)
 {
-  game_model_ = Logic::createGameModel({ game_params_->fieldSize() });
+  game_model_ = Logic::createGameModel({ params.fieldSize() });
 }
 
-void MainWindow::createGameController()
+void MainWindow::createGameController(GameParams const& params)
 {
   Q_ASSERT(game_model_ != nullptr);
   Q_ASSERT(game_window_ != nullptr);
 //  Q_ASSERT(current_player_ < Logic::c_max_player_count);
   game_controller_ = Logic::createGameController(game_window_.data(),
-    { game_model_, game_params_->gameSpeed() });
+    { game_model_, params.gameSpeed() });
 }
 
-void MainWindow::createGameView()
+void MainWindow::createGameView(GameParams const&)
 {
   QQmlEngine* engine = qmlEngine(this);
-  QQmlComponent component(engine, QUrl(QStringLiteral("qrc:/gamewindow.qml")));
+  QQmlComponent component(engine, QUrl(QStringLiteral("qrc:/GameWindow.qml")));
   auto* object = qobject_cast<QQuickItem*>(component.beginCreate(qmlContext(this)));
   QQmlEngine::setObjectOwnership(object, QQmlEngine::CppOwnership);
   object->setParentItem(this);
