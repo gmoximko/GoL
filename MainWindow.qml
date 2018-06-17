@@ -120,6 +120,13 @@ MainWindow {
     id: multiplayerMenu
 
     Item {
+      Connections {
+        target: gameParams.params
+        onStart: {
+          createGameInstance(params)
+        }
+      }
+
       SwipeView {
         id: swipeView
         anchors.fill: parent
@@ -137,7 +144,8 @@ MainWindow {
               MouseArea {
                 anchors.fill: parent
                 onClicked: {
-                  joinLobby(model.modelData)
+                  gameParams.params.setParams(model.modelData)
+                  joinLobby(gameParams.params)
                 }
               }
               Row {

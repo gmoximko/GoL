@@ -8,6 +8,14 @@
 
 namespace View {
 
+void GameParams::setLobby(Network::LobbyPtr lobby)
+{
+  lobby_ = std::move(lobby);
+  Q_ASSERT(lobby_->lobbyParams() == game_params_);
+  auto const connection = connect(lobby_.data(), &Network::Lobby::ready, this, &GameParams::ready, Qt::UniqueConnection);
+  Q_ASSERT(connection);
+}
+
 MainWindow::MainWindow(QQuickItem* parent)
   : QQuickItem(parent)
 {
@@ -89,8 +97,7 @@ void MainWindow::createGameController(GameParams const& params)
 
 void MainWindow::createGameView(GameParams const&)
 {
-  QQmlEngine* engine = qmlEngine(this);
-  QQmlComponent component(engine, QUrl(QStringLiteral("qrc:/GameWindow.qml")));
+  QQmlComponent component(qmlEngine(this), QUrl(QStringLiteral("qrc:/GameWindow.qml")));
   auto* object = qobject_cast<QQuickItem*>(component.beginCreate(qmlContext(this)));
   QQmlEngine::setObjectOwnership(object, QQmlEngine::CppOwnership);
   object->setParentItem(this);

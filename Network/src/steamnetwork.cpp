@@ -133,99 +133,123 @@ void foreachLobbyMember(CSteamID lobby_id, Func&& func)
   }
 }
 
-class LobbyImpl : public Lobby
+CSteamID steamId(LobbyId id)
 {
-public:
-  static LobbyPtr join(CSteamID lobby_id, LobbyParams const& lobby_params)
-  {
-    Q_ASSERT(([lobby_id, &lobby_params]() -> bool
-    {
-      LobbyParams params;
-      auto const retrieved = retrieveLobby(lobby_id, params);
-      return retrieved && params == lobby_params;
-    })());
-    return LobbyPtr(new LobbyImpl(lobby_params));
-  }
-  static LobbyPtr create(CSteamID lobby_id, LobbyParams const& lobby_params)
-  {
-    auto const written = writeLobbyParams(lobby_id, lobby_params);
-    Q_ASSERT(written);
-    return LobbyPtr(new LobbyImpl(lobby_params));
-  }
+  return CSteamID(static_cast<uint64_t>(id));
+}
 
-  LobbyImpl(LobbyImpl const& lobby) = delete;
-  void operator=(LobbyImpl const& lobby) = delete;
-  ~LobbyImpl() override
+} // namespace
+
+LobbyPtr SteamLobby::join(LobbyParams const& lobby_params)
+{
+  Q_ASSERT(([lobby_id = steamId(lobby_params.lobby_id_), &lobby_params]() -> bool
   {
-    auto* steam_matchmaking = SteamMatchmaking();
-    if (steam_matchmaking != nullptr)
+    LobbyParams params;
+    auto const retrieved = retrieveLobby(lobby_id, params);
+    return retrieved && params == lobby_params;
+  })());
+  return LobbyPtr(new SteamLobby(lobby_params));
+}
+
+LobbyPtr SteamLobby::create(LobbyParams const& lobby_params)
+{
+  auto const written = writeLobbyParams(steamId(lobby_params.lobby_id_), lobby_params);
+  Q_ASSERT(written);
+  return LobbyPtr(new SteamLobby(lobby_params));
+}
+
+SteamLobby::SteamLobby(LobbyParams params)
+  : Lobby(nullptr)
+  , callback_timer_id_(startTimer(c_update_time, Qt::TimerType::PreciseTimer))
+  , lobby_params_(std::move(params))
+  , accepted_members_{ SteamUser()->GetSteamID() }
+  , on_persona_state_changed_(this, &SteamLobby::onPersonaStateChanged)
+  , on_lobby_data_updated_(this, &SteamLobby::onLobbyDataUpdated)
+  , on_chat_data_updated_(this, &SteamLobby::onLobbyChatUpdated)
+  , on_p2p_session_requested_(this, &SteamLobby::onP2PSessionRequested)
+  , on_p2p_session_connect_failed_(this, &SteamLobby::onP2PSessionConnectFailed)
+{
+  Q_ASSERT(callback_timer_id_ != 0);
+  Q_ASSERT(lobbyId().IsValid());
+}
+
+SteamLobby::~SteamLobby()
+{
+  auto* steam_matchmaking = SteamMatchmaking();
+  if (steam_matchmaking != nullptr)
+  {
+    steam_matchmaking->LeaveLobby(lobbyId());
+  }
+  auto* steam_user = SteamUser();
+  if (steam_user != nullptr)
+  {
+    accepted_members_.remove(steam_user->GetSteamID());
+  }
+  auto* steam_networking = SteamNetworking();
+  if (steam_networking != nullptr)
+  {
+    for (auto const& member : accepted_members_)
     {
-      steam_matchmaking->LeaveLobby(lobbyId());
+      steam_networking->CloseP2PSessionWithUser(member);
     }
   }
+  qDebug() << "~SteamLobby()";
+}
 
-  bool ready() const override
+CSteamID SteamLobby::lobbyId() const
+{
+  return steamId(lobby_params_.lobby_id_);
+}
+
+bool SteamLobby::isReady() const
+{
+  Q_ASSERT(std::all_of(accepted_members_.begin(), accepted_members_.end(), [this](CSteamID steam_id)
   {
-    Q_ASSERT(std::all_of(accepted_members_.begin(), accepted_members_.end(), [this](CSteamID steam_id)
-    {
-      return SteamFriends()->IsUserInSource(steam_id, lobbyId());
-    }));
-    auto const result = accepted_members_.size() == lobby_params_.player_count_;
-    Q_ASSERT(!result || accepted_members_.size() == SteamMatchmaking()->GetNumLobbyMembers(lobbyId()));
-    return result;
+    return SteamFriends()->IsUserInSource(steam_id, lobbyId());
+  }));
+  auto const result = accepted_members_.size() == lobby_params_.player_count_;
+  Q_ASSERT(!result || accepted_members_.size() == SteamMatchmaking()->GetNumLobbyMembers(lobbyId()));
+  return result;
+}
+
+void SteamLobby::timerEvent(QTimerEvent* event)
+{
+  if (event->timerId() != callback_timer_id_)
+  {
+    return;
+  }
+  if (!started_ && isReady())
+  {
+    started_ = true;
+    emit ready(lobby_params_);
   }
 
-  void update()
+  uint32_t msg_size = 0;
+  if (!SteamNetworking()->IsP2PPacketAvailable(&msg_size))
   {
-    uint32_t msg_size = 0;
-    if (!SteamNetworking()->IsP2PPacketAvailable(&msg_size))
-    {
-      return;
-    }
-    Q_ASSERT(msg_size > 0);
-    std::string msg(msg_size, 0);
-    CSteamID steam_id;
-    if (!SteamNetworking()->ReadP2PPacket(&msg.front(), static_cast<uint32_t>(msg.size()), &msg_size, &steam_id))
-    {
-      return;
-    }
-    Q_ASSERT(msg.size() == msg_size);
-    Q_ASSERT(SteamFriends()->IsUserInSource(steam_id, lobbyId()));
-    Q_ASSERT(msg == "hello");
-    qDebug() << msg.c_str();
-    accepted_members_.insert(steam_id);
+    return;
   }
+  Q_ASSERT(msg_size > 0);
+  std::string msg(msg_size, 0);
+  CSteamID steam_id;
+  if (!SteamNetworking()->ReadP2PPacket(&msg.front(), static_cast<uint32_t>(msg.size()), &msg_size, &steam_id))
+  {
+    return;
+  }
+  Q_ASSERT(msg.size() == msg_size);
+  Q_ASSERT(SteamFriends()->IsUserInSource(steam_id, lobbyId()));
+  Q_ASSERT(msg == "hello");
+  qDebug() << msg.c_str();
+  accepted_members_.insert(steam_id);
+}
 
-private:
-  explicit LobbyImpl(LobbyParams const& params)
-    : lobby_params_(params)
-    , accepted_members_{ SteamUser()->GetSteamID() }
-    , on_persona_state_changed_(this, &LobbyImpl::onPersonaStateChanged)
-    , on_lobby_data_updated_(this, &LobbyImpl::onLobbyDataUpdated)
-    , on_chat_data_updated_(this, &LobbyImpl::onLobbyChatUpdated)
-    , on_p2p_session_requested_(this, &LobbyImpl::onP2PSessionRequested)
-    , on_p2p_session_connect_failed_(this, &LobbyImpl::onP2PSessionConnectFailed)
-  {}
-
-  CSteamID lobbyId() const { return CSteamID(static_cast<uint64_t>(lobby_params_.lobby_id_)); }
-
-  LobbyParams const lobby_params_;
-  QSet<CSteamID> accepted_members_;
-
-  STEAM_CALLBACK(LobbyImpl, onPersonaStateChanged, PersonaStateChange_t, on_persona_state_changed_);
-  STEAM_CALLBACK(LobbyImpl, onLobbyDataUpdated, LobbyDataUpdate_t, on_lobby_data_updated_);
-  STEAM_CALLBACK(LobbyImpl, onLobbyChatUpdated, LobbyChatUpdate_t, on_chat_data_updated_);
-  STEAM_CALLBACK(LobbyImpl, onP2PSessionRequested, P2PSessionRequest_t, on_p2p_session_requested_);
-  STEAM_CALLBACK(LobbyImpl, onP2PSessionConnectFailed, P2PSessionConnectFail_t, on_p2p_session_connect_failed_);
-};
-
-void LobbyImpl::onPersonaStateChanged(PersonaStateChange_t* callback)
+void SteamLobby::onPersonaStateChanged(PersonaStateChange_t* callback)
 {
   if (SteamFriends()->IsUserInSource(callback->m_ulSteamID, lobbyId()))
   {}
 }
 
-void LobbyImpl::onLobbyDataUpdated(LobbyDataUpdate_t* callback)
+void SteamLobby::onLobbyDataUpdated(LobbyDataUpdate_t* callback)
 {
   if (lobbyId() != callback->m_ulSteamIDLobby)
   {
@@ -241,7 +265,7 @@ void LobbyImpl::onLobbyDataUpdated(LobbyDataUpdate_t* callback)
   }
 }
 
-void LobbyImpl::onLobbyChatUpdated(LobbyChatUpdate_t* callback)
+void SteamLobby::onLobbyChatUpdated(LobbyChatUpdate_t* callback)
 {
   if (lobbyId() != callback->m_ulSteamIDLobby)
   {
@@ -267,7 +291,7 @@ void LobbyImpl::onLobbyChatUpdated(LobbyChatUpdate_t* callback)
   }
 }
 
-void LobbyImpl::onP2PSessionRequested(P2PSessionRequest_t* callback)
+void SteamLobby::onP2PSessionRequested(P2PSessionRequest_t* callback)
 {
   foreachLobbyMember(lobbyId(), [callback, this](CSteamID member)
   {
@@ -280,13 +304,11 @@ void LobbyImpl::onP2PSessionRequested(P2PSessionRequest_t* callback)
   });
 }
 
-void LobbyImpl::onP2PSessionConnectFailed(P2PSessionConnectFail_t* callback)
+void SteamLobby::onP2PSessionConnectFailed(P2PSessionConnectFail_t* callback)
 {
   qDebug() << SteamFriends()->GetFriendPersonaName(callback->m_steamIDRemote)
            << "connect failed!" << static_cast<int>(callback->m_eP2PSessionError);
 }
-
-} // namespace
 
 SteamNetwork::SteamNetwork(QObject* parent)
   : GameNetwork(parent)
@@ -355,7 +377,8 @@ void SteamNetwork::onLobbyCreated(LobbyCreated_t* callback, bool failure)
   qDebug() << "onLobbyCreated " << failure;
   if (callback->m_eResult == k_EResultOK)
   {
-    emit lobbyCreated(LobbyImpl::create(callback->m_ulSteamIDLobby, lobby_params_));
+    lobby_params_.lobby_id_ = callback->m_ulSteamIDLobby;
+    emit lobbyCreated(SteamLobby::create(lobby_params_));
   }
 }
 
@@ -364,7 +387,8 @@ void SteamNetwork::onLobbyEntered(LobbyEnter_t* callback, bool failure)
   qDebug() << "onLobbyEntered " << failure;
   if (callback->m_EChatRoomEnterResponse == k_EChatRoomEnterResponseSuccess)
   {
-    emit lobbyCreated(LobbyImpl::join(callback->m_ulSteamIDLobby, lobby_params_));
+    Q_ASSERT(callback->m_ulSteamIDLobby == lobby_params_.lobby_id_);
+    emit lobbyCreated(SteamLobby::join(lobby_params_));
   }
 }
 

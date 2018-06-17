@@ -3,9 +3,48 @@
 
 #include <steam/steam_api.h>
 
+#include <QSet>
+
 #include "../gamenetwork.h"
 
 namespace Network {
+
+class SteamLobby : public Lobby
+{
+  Q_OBJECT
+
+public:
+  static LobbyPtr join(LobbyParams const& params);
+  static LobbyPtr create(LobbyParams const& params);
+
+  SteamLobby(SteamLobby&& lobby) = default;
+  SteamLobby& operator=(SteamLobby&& lobby) = default;
+
+  SteamLobby(SteamLobby const& lobby) = delete;
+  SteamLobby& operator=(SteamLobby const& lobby) = delete;
+  ~SteamLobby() override;
+
+  LobbyParams const& lobbyParams() const override { return lobby_params_; }
+
+private:
+  explicit SteamLobby(LobbyParams params);
+
+  CSteamID lobbyId() const;
+  bool isReady() const;
+
+  void timerEvent(QTimerEvent* event) override;
+
+  int const callback_timer_id_ = 0;
+  LobbyParams const lobby_params_;
+  QSet<CSteamID> accepted_members_;
+  bool started_ = false;
+
+  STEAM_CALLBACK(SteamLobby, onPersonaStateChanged, PersonaStateChange_t, on_persona_state_changed_);
+  STEAM_CALLBACK(SteamLobby, onLobbyDataUpdated, LobbyDataUpdate_t, on_lobby_data_updated_);
+  STEAM_CALLBACK(SteamLobby, onLobbyChatUpdated, LobbyChatUpdate_t, on_chat_data_updated_);
+  STEAM_CALLBACK(SteamLobby, onP2PSessionRequested, P2PSessionRequest_t, on_p2p_session_requested_);
+  STEAM_CALLBACK(SteamLobby, onP2PSessionConnectFailed, P2PSessionConnectFail_t, on_p2p_session_connect_failed_);
+};
 
 class SteamNetwork : public GameNetwork
 {

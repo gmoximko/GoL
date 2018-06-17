@@ -10,7 +10,7 @@
 
 namespace View {
 
-struct GameParams : public QObject
+class GameParams : public QObject
 {
   Q_OBJECT
   Q_PROPERTY(QString name READ name WRITE setName)
@@ -25,12 +25,12 @@ public:
     qDebug() << "~GameParams()";
   }
 
-  Q_INVOKABLE bool isLobbyReady() const { return lobby_ != nullptr && lobby_->ready(); }
+  auto lobby() const { return lobby_; }
+  auto const& getParams() const { return game_params_; }
   Q_INVOKABLE void setParams(QVariant const& lobby_params)
   {
     game_params_ = lobby_params.value<Network::LobbyParams>();
   }
-  auto const& getParams() const { return game_params_; }
 
   auto lobbyId() const { return game_params_.lobby_id_; }
   auto name() const { return game_params_.name_; }
@@ -47,7 +47,17 @@ public:
   }
 
 public slots:
-  void setLobby(Network::LobbyPtr lobby) { lobby_ = lobby; }
+  void setLobby(Network::LobbyPtr lobby);
+
+private slots:
+  void ready(Network::LobbyParams const& lobby_params)
+  {
+    Q_ASSERT(lobby_params == game_params_);
+    emit start(this);
+  }
+
+signals:
+  void start(GameParams* params);
 
 private:
   Network::LobbyPtr lobby_;
