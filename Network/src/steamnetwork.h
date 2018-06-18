@@ -25,6 +25,9 @@ public:
   ~SteamLobby() override;
 
   LobbyParams const& lobbyParams() const override { return lobby_params_; }
+  bool initialized() const { return game_model_ != nullptr; }
+
+  void initialize(Logic::GameModelPtr game_model) override;
 
 private:
   explicit SteamLobby(LobbyParams params);
@@ -37,7 +40,7 @@ private:
   int const callback_timer_id_ = 0;
   LobbyParams const lobby_params_;
   QSet<CSteamID> accepted_members_;
-  bool started_ = false;
+  Logic::GameModelPtr game_model_;
 
   STEAM_CALLBACK(SteamLobby, onPersonaStateChanged, PersonaStateChange_t, on_persona_state_changed_);
   STEAM_CALLBACK(SteamLobby, onLobbyDataUpdated, LobbyDataUpdate_t, on_lobby_data_updated_);

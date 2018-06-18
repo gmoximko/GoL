@@ -48,8 +48,8 @@ MainWindow {
       height: mainWindow.height - toolBar.contentHeight
 
       function back() {
-        mainMenu.pop()
         if (mainWindow.destroyGame()) {}
+        mainMenu.pop(null)
       }
 
       Keys.onReleased: {

@@ -45,6 +45,10 @@ public:
     //  }
     //#endif
   }
+  ~GameModelImpl() override
+  {
+    qDebug() << "~GameModel()";
+  }
 
   QPoint cells() const override
   {

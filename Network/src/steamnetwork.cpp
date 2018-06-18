@@ -37,6 +37,11 @@ std::string toString(QString const& str)
   return str.toUtf8().data();
 }
 
+std::string toString(Logic::PlayerId player_id)
+{
+  return toString(static_cast<int>(player_id));
+}
+
 template<typename T>
 T toValue(std::string const& str)
 {
@@ -60,6 +65,12 @@ template<>
 QString toValue(std::string const& str)
 {
   return str.c_str();
+}
+
+template<>
+Logic::PlayerId toValue(std::string const& str)
+{
+  return static_cast<Logic::PlayerId>(toValue<int>(str));
 }
 
 template<class Owner, typename T, T Owner::*member>
@@ -91,7 +102,7 @@ bool retrieveLobby(CSteamID lobby_id, LobbyParams& lobby_params)
     { c_lobby_name, Member<LobbyParams, QString, &LobbyParams::name_>::read },
     { c_field_size, Member<LobbyParams, QPoint, &LobbyParams::field_size_>::read },
     { c_game_speed, Member<LobbyParams, int, &LobbyParams::game_speed_>::read },
-    { c_player_count, Member<LobbyParams, int, &LobbyParams::player_count_>::read },
+    { c_player_count, Member<LobbyParams, Logic::PlayerId, &LobbyParams::player_count_>::read },
   };
 
   lobby_params.lobby_id_ = static_cast<LobbyId>(lobby_id.ConvertToUint64());
@@ -109,7 +120,7 @@ bool writeLobbyParams(CSteamID lobby_id, LobbyParams const& lobby_params)
     { c_lobby_name, Member<LobbyParams, QString, &LobbyParams::name_>::write },
     { c_field_size, Member<LobbyParams, QPoint, &LobbyParams::field_size_>::write },
     { c_game_speed, Member<LobbyParams, int, &LobbyParams::game_speed_>::write },
-    { c_player_count, Member<LobbyParams, int, &LobbyParams::player_count_>::write },
+    { c_player_count, Member<LobbyParams, Logic::PlayerId, &LobbyParams::player_count_>::write },
   };
   return std::all_of(writers.begin(), writers.end(), [lobby_id, &lobby_params](auto iter)
   {
@@ -196,6 +207,11 @@ SteamLobby::~SteamLobby()
   qDebug() << "~SteamLobby()";
 }
 
+void SteamLobby::initialize(Logic::GameModelPtr game_model)
+{
+  game_model_ = std::move(game_model);
+}
+
 CSteamID SteamLobby::lobbyId() const
 {
   return steamId(lobby_params_.lobby_id_);
@@ -218,9 +234,8 @@ void SteamLobby::timerEvent(QTimerEvent* event)
   {
     return;
   }
-  if (!started_ && isReady())
+  if (!initialized() && isReady())
   {
-    started_ = true;
     emit ready(lobby_params_);
   }
 
@@ -271,7 +286,7 @@ void SteamLobby::onLobbyChatUpdated(LobbyChatUpdate_t* callback)
   {
     return;
   }
-  auto const id = CSteamID(callback->m_ulSteamIDUserChanged);
+  CSteamID const id(callback->m_ulSteamIDUserChanged);
   switch (callback->m_rgfChatMemberStateChange)
   {
   case k_EChatMemberStateChangeEntered:

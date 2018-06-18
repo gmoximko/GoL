@@ -15,7 +15,7 @@ public:
   struct Params
   {
     GameModelMutablePtr game_model_;
-    int update_time_ = 100;
+    int update_time_ = 0;
     PlayerId current_player_ = 0;
   };
 

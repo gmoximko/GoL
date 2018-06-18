@@ -11,8 +11,8 @@ namespace View {
 void GameParams::setLobby(Network::LobbyPtr lobby)
 {
   lobby_ = std::move(lobby);
-  Q_ASSERT(lobby_->lobbyParams() == game_params_);
   auto const connection = connect(lobby_.data(), &Network::Lobby::ready, this, &GameParams::ready, Qt::UniqueConnection);
+  Q_ASSERT(lobby_->lobbyParams() == game_params_);
   Q_ASSERT(connection);
 }
 
@@ -41,12 +41,17 @@ MainWindow::MainWindow(QQuickItem* parent)
   }
 }
 
-QQuickItem* MainWindow::createGame(GameParams* params)
+QQuickItem* MainWindow::createGame(GameParams* game_params)
 {
-  Q_ASSERT(params != nullptr);
-  createGameModel(*params);
-  createGameView(*params);
-  createGameController(*params);
+  Q_ASSERT(game_params != nullptr);
+  Q_ASSERT(game_model_ == nullptr);
+  Q_ASSERT(game_view_ == nullptr);
+  Q_ASSERT(game_controller_ == nullptr);
+
+  createGameModel(*game_params);
+  createGameView(*game_params);
+  createGameController(*game_params);
+  initializeLobby(game_params->lobby());
 
   connect(game_view_.data(), &GameView::patternSelected,
           game_controller_.data(), &Logic::GameController::addPattern);
@@ -59,26 +64,26 @@ QQuickItem* MainWindow::createGame(GameParams* params)
 
 bool MainWindow::destroyGame()
 {
-  auto const result = game_window_.isNull();
+  auto const result = game_window_ != nullptr;
   game_model_ = nullptr;
   game_window_.reset(nullptr);
-  Q_ASSERT(game_controller_.isNull());
-  Q_ASSERT(game_view_.isNull());
-  return !result;
+  Q_ASSERT(game_controller_ == nullptr);
+  Q_ASSERT(game_view_ == nullptr);
+  return result;
 }
 
-void MainWindow::createLobby(GameParams* params)
+void MainWindow::createLobby(GameParams* game_params)
 {
   connect(game_network_.data(), &Network::GameNetwork::lobbyCreated,
-          params, &GameParams::setLobby, Qt::UniqueConnection);
-  game_network_->createLobby(params->getParams());
+          game_params, &GameParams::setLobby, Qt::UniqueConnection);
+  game_network_->createLobby(game_params->params());
 }
 
-void MainWindow::joinLobby(GameParams* params)
+void MainWindow::joinLobby(GameParams* game_params)
 {
   connect(game_network_.data(), &Network::GameNetwork::lobbyCreated,
-          params, &GameParams::setLobby, Qt::UniqueConnection);
-  game_network_->joinLobby(params->getParams());
+          game_params, &GameParams::setLobby, Qt::UniqueConnection);
+  game_network_->joinLobby(game_params->params());
 }
 
 void MainWindow::createGameModel(GameParams const& params)
@@ -90,7 +95,6 @@ void MainWindow::createGameController(GameParams const& params)
 {
   Q_ASSERT(game_model_ != nullptr);
   Q_ASSERT(game_window_ != nullptr);
-//  Q_ASSERT(current_player_ < Logic::c_max_player_count);
   game_controller_ = Logic::createGameController(game_window_.data(),
     { game_model_, params.gameSpeed() });
 }
@@ -110,6 +114,15 @@ void MainWindow::createGameView(GameParams const&)
   game_window_.reset(object);
 
   component.completeCreate();
+}
+
+void MainWindow::initializeLobby(Network::LobbyPtr lobby)
+{
+  Q_ASSERT(game_model_ != nullptr);
+  if (lobby != nullptr)
+  {
+    lobby->initialize(game_model_);
+  }
 }
 
 } // View

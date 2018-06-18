@@ -9,6 +9,8 @@
 #include <QObject>
 #include <QPointer>
 
+#include "../GameLogic/gamemodel.h"
+
 namespace Network {
 
 using LobbyId = uint64_t;
@@ -27,7 +29,7 @@ public:
   QString name_;
   QPoint field_size_;
   int game_speed_ = 0;
-  int player_count_ = 0;
+  Logic::PlayerId player_count_ = 0;
 };
 using Lobbies = QVariantList;
 
@@ -39,6 +41,8 @@ public:
   using QObject::QObject;
 
   virtual LobbyParams const& lobbyParams() const = 0;
+
+  virtual void initialize(Logic::GameModelPtr game_model) = 0;
 
 signals:
   void ready(LobbyParams const& params);
@@ -56,8 +60,8 @@ public:
   virtual void joinLobby(LobbyParams const& params) = 0;
 
 signals:
-  void lobbyCreated(LobbyPtr);
-  void lobbiesUpdated(Lobbies);
+  void lobbyCreated(LobbyPtr lobby);
+  void lobbiesUpdated(Lobbies lobbies);
 };
 using GameNetworkPtr = QPointer<GameNetwork>;
 GameNetworkPtr createGameNetwork(QObject* parent);
