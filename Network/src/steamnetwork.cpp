@@ -194,7 +194,8 @@ SteamLobby::~SteamLobby()
   auto* steam_user = SteamUser();
   if (steam_user != nullptr)
   {
-    accepted_members_.remove(steam_user->GetSteamID());
+    auto const removed = accepted_members_.erase(steam_user->GetSteamID());
+    Q_ASSERT(removed == 1);
   }
   auto* steam_networking = SteamNetworking();
   if (steam_networking != nullptr)
@@ -224,7 +225,7 @@ bool SteamLobby::isReady() const
     return SteamFriends()->IsUserInSource(steam_id, lobbyId());
   }));
   auto const result = accepted_members_.size() == lobby_params_.player_count_;
-  Q_ASSERT(!result || accepted_members_.size() == SteamMatchmaking()->GetNumLobbyMembers(lobbyId()));
+  Q_ASSERT(!result || accepted_members_.size() == static_cast<size_t>(SteamMatchmaking()->GetNumLobbyMembers(lobbyId())));
   return result;
 }
 
@@ -236,6 +237,12 @@ void SteamLobby::timerEvent(QTimerEvent* event)
   }
   if (!initialized() && isReady())
   {
+    auto const iter = accepted_members_.find(SteamUser()->GetSteamID());
+    Q_ASSERT(iter != accepted_members_.end());
+    auto const distance = std::distance(accepted_members_.begin(), iter);
+    current_player_ = static_cast<decltype(current_player_)>(distance);
+    Q_ASSERT(current_player_ < Logic::c_max_player_count);
+    Q_ASSERT(current_player_ < lobby_params_.player_count_);
     emit ready(lobby_params_);
   }
 
@@ -286,22 +293,22 @@ void SteamLobby::onLobbyChatUpdated(LobbyChatUpdate_t* callback)
   {
     return;
   }
-  CSteamID const id(callback->m_ulSteamIDUserChanged);
+  CSteamID const steam_id(callback->m_ulSteamIDUserChanged);
   switch (callback->m_rgfChatMemberStateChange)
   {
   case k_EChatMemberStateChangeEntered:
-    qDebug() << SteamFriends()->GetFriendPersonaName(id) << "joined lobby!";
-    accepted_members_.insert(id);
-    sendMessage(id, "hello");
+    qDebug() << SteamFriends()->GetFriendPersonaName(steam_id) << "joined lobby!";
+    accepted_members_.insert(steam_id);
+    sendMessage(steam_id, "hello");
     break;
   case k_EChatMemberStateChangeLeft:
   default:
-    qDebug() << SteamFriends()->GetFriendPersonaName(id) << "left lobby!";
-    auto const result = SteamNetworking()->CloseP2PSessionWithUser(id);
+    qDebug() << SteamFriends()->GetFriendPersonaName(steam_id) << "left lobby!";
+    auto const result = SteamNetworking()->CloseP2PSessionWithUser(steam_id);
     Q_ASSERT(result);
-    Q_ASSERT(accepted_members_.contains(id));
-    Q_ASSERT(id != SteamUser()->GetSteamID());
-    accepted_members_.remove(id);
+    Q_ASSERT(accepted_members_.find(steam_id) != accepted_members_.end());
+    Q_ASSERT(steam_id != SteamUser()->GetSteamID());
+    accepted_members_.erase(steam_id);
     break;
   }
 }
@@ -372,6 +379,7 @@ void SteamNetwork::timerEvent(QTimerEvent* event)
 
 void SteamNetwork::onLobbyListMatched(LobbyMatchList_t* callback, bool)
 {
+  Q_ASSERT(!signalsBlocked());
   requesting_lobbies_ = false;
   Lobbies lobbies;
 
@@ -389,6 +397,7 @@ void SteamNetwork::onLobbyListMatched(LobbyMatchList_t* callback, bool)
 
 void SteamNetwork::onLobbyCreated(LobbyCreated_t* callback, bool failure)
 {
+  Q_ASSERT(!signalsBlocked());
   qDebug() << "onLobbyCreated " << failure;
   if (callback->m_eResult == k_EResultOK)
   {
@@ -399,6 +408,7 @@ void SteamNetwork::onLobbyCreated(LobbyCreated_t* callback, bool failure)
 
 void SteamNetwork::onLobbyEntered(LobbyEnter_t* callback, bool failure)
 {
+  Q_ASSERT(!signalsBlocked());
   qDebug() << "onLobbyEntered " << failure;
   if (callback->m_EChatRoomEnterResponse == k_EChatRoomEnterResponseSuccess)
   {
@@ -409,7 +419,7 @@ void SteamNetwork::onLobbyEntered(LobbyEnter_t* callback, bool failure)
 
 void SteamNetwork::requestLobbies()
 {
-  if (requesting_lobbies_)
+  if (requesting_lobbies_ || signalsBlocked())
   {
     return;
   }

@@ -70,20 +70,8 @@ private:
   uint32_t value_ = 0;
 };
 static_assert(sizeof(LifeUnit) == sizeof(uint32_t), "sizeof(LifeUnit)");
-
-inline uint qHash(LifeUnit unit, uint seed)
-{
-  auto hash_combine = [](uint& seed, auto value)
-  {
-    seed ^= ::qHash(value) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
-  };
-  hash_combine(seed, unit.x());
-  hash_combine(seed, unit.y());
-  hash_combine(seed, unit.player());
-  return seed;
-}
-
-using LifeUnits = QSet<LifeUnit>;
+uint qHash(LifeUnit unit, uint seed);
+using LifeUnits = std::vector<LifeUnit>;
 
 struct GameModel
 {
@@ -98,7 +86,7 @@ struct GameModel
   virtual PatternPtr patternAt(SizeT idx) const = 0;
   virtual LifeUnits const& lifeUnits() const = 0;
 
-  virtual void addUnit(QPoint position, uint32_t player) = 0;
+  virtual void addUnit(QPoint position, PlayerId player) = 0;
   virtual void makeStep() = 0;
 };
 using GameModelPtr = QSharedPointer<GameModel const>;

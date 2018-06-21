@@ -41,6 +41,7 @@ public:
   using QObject::QObject;
 
   virtual LobbyParams const& lobbyParams() const = 0;
+  virtual Logic::PlayerId currentPlayer() const = 0;
 
   virtual void initialize(Logic::GameModelPtr game_model) = 0;
 
@@ -66,7 +67,7 @@ signals:
 using GameNetworkPtr = QPointer<GameNetwork>;
 GameNetworkPtr createGameNetwork(QObject* parent);
 
-inline bool operator==(LobbyParams const& lhs, LobbyParams const& rhs)
+inline bool operator == (LobbyParams const& lhs, LobbyParams const& rhs)
 {
   return lhs.name_ == rhs.name_
       && lhs.field_size_ == rhs.field_size_

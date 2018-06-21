@@ -8,6 +8,15 @@
 
 namespace View {
 
+namespace {
+
+bool suppressSignals(QObject* obj, bool block)
+{
+  return obj != nullptr && obj->blockSignals(block);
+}
+
+} // namespace
+
 void GameParams::setLobby(Network::LobbyPtr lobby)
 {
   lobby_ = std::move(lobby);
@@ -59,6 +68,7 @@ QQuickItem* MainWindow::createGame(GameParams* game_params)
   {
     game_view_->update();
   });
+  suppressSignals(game_network_.data(), true);
   return game_window_.data();
 }
 
@@ -69,6 +79,7 @@ bool MainWindow::destroyGame()
   game_window_.reset(nullptr);
   Q_ASSERT(game_controller_ == nullptr);
   Q_ASSERT(game_view_ == nullptr);
+  suppressSignals(game_network_.data(), false);
   return result;
 }
 
@@ -95,7 +106,7 @@ void MainWindow::createGameController(GameParams const& params)
 {
   Q_ASSERT(game_model_ != nullptr);
   Q_ASSERT(game_window_ != nullptr);
-  game_controller_ = Logic::createGameController(game_window_.data(),
+  game_controller_ = new Logic::GameController(game_window_.data(),
     { game_model_, params.gameSpeed() });
 }
 

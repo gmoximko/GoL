@@ -18,12 +18,18 @@ constexpr auto const c_min_cells_in_screen = 8;
 constexpr auto const c_scale_to_hide_grid = 0.2;
 
 template<typename T>
-T normalizeValue(T value, T min, T max)
+double normalizeValue(T value, T min, T max)
 {
-  return (value + min) / (min + max);
+  Q_ASSERT(min < max);
+  Q_ASSERT(value >= min);
+  Q_ASSERT(value <= max);
+  auto const result = 1.0 - (max - value) / static_cast<double>(max - min);
+  Q_ASSERT(result >= 0.0);
+  Q_ASSERT(result <= 1.0);
+  return result;
 }
 
-QColor playerColor(uint8_t player)
+QColor playerColor(Logic::PlayerId player)
 {
   switch (player)
   {

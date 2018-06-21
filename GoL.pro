@@ -17,9 +17,9 @@ SOURCES += main.cpp \
     GameView/mainwindow.cpp \
     Utilities/rleparser.cpp \
     GameLogic/gamemodel.cpp \
-    GameLogic/src/gamecontrollerimpl.cpp \
     GameLogic/src/cpulifeprocessor.cpp \
-    Network/src/steamnetwork.cpp
+    Network/src/steamnetwork.cpp \
+    GameLogic/gamecontroller.cpp
 
 RESOURCES += qml.qrc \
              patterns.qrc
@@ -42,7 +42,6 @@ HEADERS += \
     Utilities/qtutilities.h \
     GameLogic/gamecontroller.h \
     GameLogic/gamemodel.h \
-    GameLogic/src/gamecontrollerimpl.h \
     GameLogic/src/patterns.h \
     GameLogic/src/gpulifeprocessor.h \
     GameLogic/src/cpulifeprocessor.h \

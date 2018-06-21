@@ -34,6 +34,7 @@ public:
     , all_patterns_(Utilities::createPatterns())
     , life_processor_(makeLifeProcessor(cells_))
   {
+    Q_ASSERT(!QSet<LifeUnit>{ LifeUnit(0, 0, 0) }.empty());
     //#if defined(QT_DEBUG)
     //  for (Logic::SizeT idx = 0; idx < all_patterns_->patternCount(); ++idx)
     //  {
@@ -64,13 +65,23 @@ public:
   }
   LifeUnits const& lifeUnits() const override
   {
+    Q_ASSERT(([&life_units = life_processor_->lifeUnits()]() -> bool
+    {
+      QSet<QPoint> unique_pos;
+      for (auto const unit : life_units)
+      {
+        unique_pos.insert(QPoint(static_cast<int>(unit.x()), static_cast<int>(unit.y())));
+      }
+      return static_cast<size_t>(unique_pos.size()) == life_units.size();
+    })());
     return life_processor_->lifeUnits();
   }
 
-  void addUnit(QPoint position, uint32_t player) override
+  void addUnit(QPoint position, PlayerId player) override
   {
     position = loopPos(position, cells_);
-    life_processor_->addUnit(LifeUnit(position.x(), position.y(), player));
+    life_processor_->addUnit(LifeUnit(static_cast<uint16_t>(position.x()),
+                                      static_cast<uint16_t>(position.y()), player));
   }
   void makeStep() override
   {
@@ -90,6 +101,12 @@ QPoint loopPos(QPoint point, QPoint cells)
   Q_ASSERT(cells != QPoint());
   return QPoint((point.x() + cells.x()) % cells.x(),
                 (point.y() + cells.y()) % cells.y());
+}
+
+uint qHash(LifeUnit unit, uint seed)
+{
+  Utilities::Qt::hashCombine(seed, unit.x(), unit.y(), unit.player());
+  return seed;
 }
 
 GameModelMutablePtr createGameModel(GameModel::Params const& params)

@@ -49,7 +49,7 @@ void readPoints(QTextStream& stream, QPoint size, Logic::Points& points)
         }
         else /*if (c.toLower()  == 'o')*/
         {
-          for (int x = 0; x < index; x++, cell_x++)
+          for (int x = 0; x < index; ++x, ++cell_x)
           {
             QPoint unit(cell_x, size.y() - cell_y - 1);
             points.push_back(unit - size / 2);
@@ -151,7 +151,7 @@ public:
 
   Logic::SizeT patternCount() const override
   {
-    return patterns_.count();
+    return static_cast<Logic::SizeT>(patterns_.count());
   }
   Logic::PatternPtr parsePatternAt(Logic::SizeT idx) const override
   {

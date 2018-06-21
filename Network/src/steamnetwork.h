@@ -1,9 +1,9 @@
 #ifndef STEAMNETWORK_H
 #define STEAMNETWORK_H
 
-#include <steam/steam_api.h>
+#include <set>
 
-#include <QSet>
+#include <steam/steam_api.h>
 
 #include "../gamenetwork.h"
 
@@ -18,14 +18,14 @@ public:
   static LobbyPtr create(LobbyParams const& params);
 
   SteamLobby(SteamLobby&& lobby) = default;
-  SteamLobby& operator=(SteamLobby&& lobby) = default;
+  SteamLobby& operator = (SteamLobby&& lobby) = default;
 
   SteamLobby(SteamLobby const& lobby) = delete;
-  SteamLobby& operator=(SteamLobby const& lobby) = delete;
+  SteamLobby& operator = (SteamLobby const& lobby) = delete;
   ~SteamLobby() override;
 
   LobbyParams const& lobbyParams() const override { return lobby_params_; }
-  bool initialized() const { return game_model_ != nullptr; }
+  Logic::PlayerId currentPlayer() const override { return current_player_; }
 
   void initialize(Logic::GameModelPtr game_model) override;
 
@@ -34,13 +34,15 @@ private:
 
   CSteamID lobbyId() const;
   bool isReady() const;
+  bool initialized() const { return game_model_ != nullptr; }
 
   void timerEvent(QTimerEvent* event) override;
 
   int const callback_timer_id_ = 0;
   LobbyParams const lobby_params_;
-  QSet<CSteamID> accepted_members_;
+  std::set<CSteamID> accepted_members_;
   Logic::GameModelPtr game_model_;
+  Logic::PlayerId current_player_ = Logic::c_max_player_count;
 
   STEAM_CALLBACK(SteamLobby, onPersonaStateChanged, PersonaStateChange_t, on_persona_state_changed_);
   STEAM_CALLBACK(SteamLobby, onLobbyDataUpdated, LobbyDataUpdate_t, on_lobby_data_updated_);

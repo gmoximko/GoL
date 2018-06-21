@@ -19,16 +19,25 @@ public:
     PlayerId current_player_ = 0;
   };
 
-  using QObject::QObject;
+  explicit GameController(QObject* parent, Params const& params);
 
 public slots:
-  virtual void addPattern(PatternTrs pattern_trs) = 0;
+  virtual void addPattern(PatternTrs pattern_trs);
 
 signals:
   void stepMade();
+
+protected:
+  void timerEvent(QTimerEvent* event) override;
+
+private:
+  void makeStep();
+
+  int const step_timer_id_ = 0;
+  PlayerId const current_player_ = 0;
+  GameModelMutablePtr game_model_;
 };
 using GameControllerPtr = QPointer<GameController>;
-GameControllerPtr createGameController(QObject* parent, GameController::Params const& params);
 
 } // Logic
 

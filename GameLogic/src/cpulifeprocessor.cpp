@@ -175,7 +175,7 @@ void CPULifeProcessor::prepareLifeUnits()
     {
       auto const x = static_cast<uint16_t>(idx % field_size_.x());
       auto const y = static_cast<uint16_t>(idx / field_size_.y());
-      life_units_.insert(LifeUnit(x, y));
+      life_units_.emplace_back(LifeUnit(x, y));
     }
   }
 }
