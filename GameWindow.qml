@@ -4,10 +4,11 @@ import QtQuick.Controls 2.3
 import QtSensors 5.9
 import GoL 1.0
 
-Item {
+Page {
   id: gameWindow
   width: parent.width
   height: parent.height
+  title: qsTr("Scores: ") + gameView.scores
 
   states: [
     State {

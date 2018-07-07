@@ -64,10 +64,8 @@ QQuickItem* MainWindow::createGame(GameParams* game_params)
 
   connect(game_view_.data(), &GameView::patternSelected,
           game_controller_.data(), &Logic::GameController::addPattern);
-  connect(game_controller_.data(), &Logic::GameController::stepMade, [this]
-  {
-    game_view_->update();
-  });
+  connect(game_controller_.data(), &Logic::GameController::stepMade,
+          game_view_.data(), &GameView::onStepMade);
   suppressSignals(game_network_.data(), true);
   return game_window_.data();
 }
@@ -107,7 +105,11 @@ void MainWindow::createGameController(GameParams const& params)
   Q_ASSERT(game_model_ != nullptr);
   Q_ASSERT(game_window_ != nullptr);
   game_controller_ = new Logic::GameController(game_window_.data(),
-    { game_model_, params.gameSpeed() });
+    { game_model_
+    , params.gameSpeed()
+    , params.initialScores()
+    , params.currentPlayer()
+    });
 }
 
 void MainWindow::createGameView(GameParams const&)

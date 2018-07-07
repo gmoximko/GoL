@@ -17,6 +17,7 @@ class GameParams : public QObject
   Q_PROPERTY(QPoint fieldSize READ fieldSize WRITE setFieldSize)
   Q_PROPERTY(int gameSpeed READ gameSpeed WRITE setGameSpeed)
   Q_PROPERTY(int playerCount READ playerCount WRITE setPlayerCount)
+  Q_PROPERTY(int initialScores READ initialScores WRITE setInitialScores)
 
 public:
   using QObject::QObject;
@@ -31,10 +32,12 @@ public:
     game_params_ = lobby_params.value<Network::LobbyParams>();
   }
 
+  Logic::PlayerId currentPlayer() const { return lobby_ == nullptr ? 0 : lobby_->currentPlayer(); }
   auto name() const { return game_params_.name_; }
   auto fieldSize() const { return game_params_.field_size_; }
   auto gameSpeed() const { return game_params_.game_speed_; }
   auto playerCount() const { return game_params_.player_count_; }
+  auto initialScores() const { return game_params_.initial_scores_; }
 
   auto lobby() { return lobby_; }
   void setName(QString name) { game_params_.name_ = std::move(name); }
@@ -43,6 +46,10 @@ public:
   void setPlayerCount(int player_count)
   {
     game_params_.player_count_ = static_cast<Logic::PlayerId>(player_count);
+  }
+  void setInitialScores(int scores)
+  {
+    game_params_.initial_scores_ = static_cast<Logic::Score>(scores);
   }
 
 public slots:

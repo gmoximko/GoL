@@ -5,7 +5,7 @@
 
 namespace Logic {
 
-class GPULifeProcessor : public LifeProcessor
+class GPULifeProcessor final : public LifeProcessor
 {
 public:
   explicit GPULifeProcessor(QPoint field_size);
@@ -15,6 +15,7 @@ public:
   {
     return life_units_;
   }
+  bool computed() const override;
 
   void addUnit(LifeUnit unit) override;
   void processLife() override;

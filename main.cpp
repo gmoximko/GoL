@@ -2,7 +2,6 @@
 #include <QQuickView>
 #include <QQmlEngine>
 
-#include "GameView/gameview.h"
 #include "GameView/mainwindow.h"
 
 void registerQmlTypes()

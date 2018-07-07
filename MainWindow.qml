@@ -37,7 +37,7 @@ MainWindow {
       }
 
       Label {
-//        text: mainMenu.currentItem.title
+        text: mainMenu.currentItem.title
         anchors.centerIn: parent
       }
     }
@@ -58,7 +58,9 @@ MainWindow {
           mainMenu.back()
         }
       }
-      initialItem: Item {}
+      initialItem: Page {
+        title: qsTr("Main Menu")
+      }
     }
   }
 

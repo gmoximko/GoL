@@ -32,6 +32,12 @@ void hashCombine(uint& seed, T&& value, Args&& ...args)
   hashCombine(seed, std::forward<Args>(args)...);
 }
 
+template<typename T, typename = std::enable_if_t<std::is_integral<T>::value>>
+bool isPowerOfTwo(T value)
+{
+  return value != 0 && ((value & (value - 1)) == 0);
+}
+
 }} // Utilities::Qt
 
 inline uint qHash(QPoint const& point, uint seed)

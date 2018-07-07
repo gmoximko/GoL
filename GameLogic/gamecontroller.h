@@ -16,26 +16,37 @@ public:
   {
     GameModelMutablePtr game_model_;
     int update_time_ = 0;
+    Score initial_scores_ = 0;
     PlayerId current_player_ = 0;
   };
 
   explicit GameController(QObject* parent, Params const& params);
+  ~GameController() override;
 
 public slots:
-  virtual void addPattern(PatternTrs pattern_trs);
+  virtual bool addPattern(PatternTrs pattern_trs);
 
 signals:
-  void stepMade();
+  void stepMade(Score scores);
 
 protected:
   void timerEvent(QTimerEvent* event) override;
 
 private:
+  class Command;
+  using StepId = uint64_t;
+
   void makeStep();
+  void applyCommands();
 
   int const step_timer_id_ = 0;
-  PlayerId const current_player_ = 0;
+  PlayerId const player_ = 0;
+
   GameModelMutablePtr game_model_;
+  std::vector<Command> commands_;
+  StepId step_ = 0;
+  Score scores_ = 0;
+  decltype(game_model_->lifeUnits().size()) life_on_last_step_ = 0;
 };
 using GameControllerPtr = QPointer<GameController>;
 

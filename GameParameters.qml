@@ -55,5 +55,15 @@ Column {
       params.gameSpeed = Number(currentText)
     }
   }
+  ComboBox {
+    id: initialScores
+    clip: true
+    currentIndex: 1
+    model: [500, 1000, 1500, 2000, 2500]
+
+    onCurrentTextChanged: {
+      params.initialScores = Number(currentText)
+    }
+  }
 }
 

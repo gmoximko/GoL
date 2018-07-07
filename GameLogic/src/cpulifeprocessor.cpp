@@ -132,15 +132,9 @@ CPULifeProcessor::~CPULifeProcessor()
 void CPULifeProcessor::addUnit(LifeUnit unit)
 {
   auto const position = static_cast<Index>(unit.x() + unit.y() * field_size_.y());
-  if (computed())
-  {
-    Q_ASSERT(position < input_.size());
-    input_[position] = 1;
-  }
-  else
-  {
-    position_cache_.insert(position);
-  }
+  Q_ASSERT(computed());
+  Q_ASSERT(position < input_.size());
+  input_[position] = 1;
 }
 
 void CPULifeProcessor::processLife()
@@ -183,11 +177,6 @@ void CPULifeProcessor::prepareLifeUnits()
 void CPULifeProcessor::handleComputeCompletion()
 {
   input_.swap(output_);
-  for (auto const& pos : position_cache_)
-  {
-    input_[pos] = 1;
-  }
-  position_cache_.clear();
 }
 
 } // Logic

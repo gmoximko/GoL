@@ -18,12 +18,12 @@ constexpr auto const c_min_cells_in_screen = 8;
 constexpr auto const c_scale_to_hide_grid = 0.2;
 
 template<typename T>
-double normalizeValue(T value, T min, T max)
+qreal normalizeValue(T value, T min, T max)
 {
   Q_ASSERT(min < max);
   Q_ASSERT(value >= min);
   Q_ASSERT(value <= max);
-  auto const result = 1.0 - (max - value) / static_cast<double>(max - min);
+  auto const result = 1.0 - (max - value) / static_cast<qreal>(max - min);
   Q_ASSERT(result >= 0.0);
   Q_ASSERT(result <= 1.0);
   return result;
@@ -169,7 +169,7 @@ void GameView::selectPattern()
     {
       return QPoint(1, 1);
     }
-    Logic::SizeT scores() const override
+    Logic::Score scores() const override
     {
       return points_.size();
     }
@@ -214,6 +214,16 @@ void GameView::zoom(qreal ratio, QPointF point)
   auto const new_size = fieldSize();
   setFieldOffset(-QPointF(normalized_point.x() * new_size.x(),
                           normalized_point.y() * new_size.y()) + point);
+}
+
+void GameView::onStepMade(Logic::Score scores)
+{
+  if (scores != scores_)
+  {
+    scores_ = scores;
+    emit scoresChanged();
+  }
+  update();
 }
 
 void GameView::drawGrid(QPainter& painter) const

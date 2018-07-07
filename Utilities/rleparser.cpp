@@ -129,7 +129,7 @@ public:
   {
     return size_;
   }
-  Logic::SizeT scores() const override
+  Logic::Score scores() const override
   {
     return points_.size();
   }

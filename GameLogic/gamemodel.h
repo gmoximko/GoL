@@ -13,6 +13,7 @@ namespace Logic {
 using Points = QVector<QPoint>;
 using SizeT = int;
 using PlayerId = uint8_t;
+using Score = uint64_t;
 
 constexpr uint32_t const c_pow_of_two_max_field_dimension = 15;
 constexpr PlayerId const c_max_player_count = 4;
@@ -25,7 +26,7 @@ struct Pattern
   virtual QString name() const = 0;
   virtual Points const& points() const = 0;
   virtual QPoint size() const = 0;
-  virtual SizeT scores() const = 0;
+  virtual Score scores() const = 0;
 };
 using PatternPtr = QSharedPointer<Pattern const>;
 using PatternTrs = QPair<PatternPtr, QMatrix>;
@@ -73,6 +74,17 @@ static_assert(sizeof(LifeUnit) == sizeof(uint32_t), "sizeof(LifeUnit)");
 uint qHash(LifeUnit unit, uint seed);
 using LifeUnits = std::vector<LifeUnit>;
 
+struct LifeProcessor
+{
+  virtual ~LifeProcessor() = default;
+  virtual LifeUnits const& lifeUnits() const = 0;
+  virtual bool computed() const = 0;
+
+  virtual void addUnit(LifeUnit unit) = 0;
+  virtual void processLife() = 0;
+};
+using LifeProcessorPtr = std::unique_ptr<LifeProcessor>;
+
 struct GameModel
 {
   struct Params
@@ -86,21 +98,11 @@ struct GameModel
   virtual PatternPtr patternAt(SizeT idx) const = 0;
   virtual LifeUnits const& lifeUnits() const = 0;
 
-  virtual void addUnit(QPoint position, PlayerId player) = 0;
-  virtual void makeStep() = 0;
+  virtual LifeProcessor& lifeProcessor() = 0;
 };
 using GameModelPtr = QSharedPointer<GameModel const>;
 using GameModelMutablePtr = QSharedPointer<GameModel>;
 GameModelMutablePtr createGameModel(GameModel::Params const& params);
-
-struct LifeProcessor
-{
-  virtual ~LifeProcessor() = default;
-  virtual LifeUnits const& lifeUnits() const = 0;
-  virtual void addUnit(LifeUnit unit) = 0;
-  virtual void processLife() = 0;
-};
-using LifeProcessorPtr = std::unique_ptr<LifeProcessor>;
 
 } // Logic
 

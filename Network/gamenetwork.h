@@ -22,6 +22,7 @@ struct LobbyParams
   Q_PROPERTY(QPoint fieldSize MEMBER field_size_)
   Q_PROPERTY(int gameSpeed MEMBER game_speed_)
   Q_PROPERTY(int playerCount MEMBER player_count_)
+  Q_PROPERTY(int initialScores MEMBER initial_scores_)
 
 public:
   LobbyId lobby_id_ = 0;
@@ -30,6 +31,7 @@ public:
   QPoint field_size_;
   int game_speed_ = 0;
   Logic::PlayerId player_count_ = 0;
+  Logic::Score initial_scores_ = 0;
 };
 using Lobbies = QVariantList;
 
@@ -72,7 +74,8 @@ inline bool operator == (LobbyParams const& lhs, LobbyParams const& rhs)
   return lhs.name_ == rhs.name_
       && lhs.field_size_ == rhs.field_size_
       && lhs.game_speed_ == rhs.game_speed_
-      && lhs.player_count_ == rhs.player_count_;
+      && lhs.player_count_ == rhs.player_count_
+      && lhs.initial_scores_ == rhs.initial_scores_;
 }
 
 } // Network

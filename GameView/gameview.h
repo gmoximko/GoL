@@ -19,8 +19,8 @@ class PatternModel
 
 public:
   PatternModel() = default;
-  explicit PatternModel(Logic::PatternPtr const pattern_ptr)
-    : pattern_ptr_(pattern_ptr)
+  explicit PatternModel(Logic::PatternPtr pattern_ptr)
+    : pattern_ptr_(std::move(pattern_ptr))
   {}
 
   QString name() const
@@ -31,7 +31,7 @@ public:
   {
     return pattern_ptr_->size();
   }
-  Logic::SizeT scores() const
+  Logic::Score scores() const
   {
     return pattern_ptr_->scores();
   }
@@ -53,6 +53,7 @@ class GameView : public QQuickPaintedItem
   Q_PROPERTY(qreal fieldScale MEMBER field_scale_ WRITE setFieldScale)
   Q_PROPERTY(qreal maxScale READ maxScale CONSTANT)
   Q_PROPERTY(qreal minScale READ minScale CONSTANT)
+  Q_PROPERTY(int scores MEMBER scores_ NOTIFY scoresChanged)
 
 public:
   using QQuickPaintedItem::QQuickPaintedItem;
@@ -74,9 +75,13 @@ public:
   Q_INVOKABLE void selectPattern();
   Q_INVOKABLE void zoom(qreal ratio, QPointF point);
 
+public slots:
+  void onStepMade(Logic::Score scores);
+
 signals:
   void currentPatternChanged();
-  void patternSelected(Logic::PatternTrs pattern_trs);
+  void scoresChanged();
+  bool patternSelected(Logic::PatternTrs pattern_trs);
 
 private:
   using MaybeTRS = QPair<bool, QMatrix>;
@@ -100,6 +105,7 @@ private:
   MaybeTRS pattern_trs_;
   Logic::PatternPtr current_pattern_;
   Logic::GameModelPtr game_model_;
+  Logic::Score scores_ = 0;
 };
 using GameViewPtr = QPointer<GameView>;
 

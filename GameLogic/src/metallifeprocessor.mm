@@ -63,7 +63,6 @@ static NSString* const kernel_src =
   MTLSize field_size_;
   MTLSize threads_per_group_;
 
-  NSMutableSet* position_cache_;
   BOOL computed_;
 }
 
@@ -127,14 +126,7 @@ static NSString* const kernel_src =
   assert(input_);
   assert(output_);
 
-  position_cache_ = [NSMutableSet new];
   return self;
-}
-
-- (void) dealloc
-{
-  [position_cache_ dealloc];
-  [super dealloc];
 }
 
 - (void) processLife
@@ -165,15 +157,9 @@ static NSString* const kernel_src =
 
 - (void) addUnit: (NSUInteger)position
 {
-  if (computed_)
-  {
-    assert(position < [self fieldSize]);
-    ((UInt8*)[input_ contents])[position] = 1;
-  }
-  else
-  {
-    [position_cache_ addObject: [NSNumber numberWithUnsignedLong: position]];
-  }
+  assert(computed_);
+  assert(position < [self fieldSize]);
+  ((UInt8*)[input_ contents])[position] = 1;
 }
 
 - (void) handleComputeCompletion
@@ -183,12 +169,6 @@ static NSString* const kernel_src =
   id<MTLBuffer> tmp = input_;
   input_ = output_;
   output_ = tmp;
-
-  for (id pos in position_cache_)
-  {
-    [self addUnit: [pos unsignedIntegerValue]];
-  }
-  [position_cache_ removeAllObjects];
 }
 
 @end
@@ -208,8 +188,13 @@ catch(NSException* e)
 
 GPULifeProcessor::~GPULifeProcessor()
 {
-  while (![(id)self_ computed]);
+  while (!computed());
   [(id)self_ dealloc];
+}
+
+bool GPULifeProcessor::computed() const
+{
+  return [(id)self_ computed];
 }
 
 void GPULifeProcessor::addUnit(LifeUnit unit)

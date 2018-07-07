@@ -14,6 +14,7 @@ constexpr auto const* c_lobby_name = "name";
 constexpr auto const* c_field_size = "field_size";
 constexpr auto const* c_game_speed = "game_speed";
 constexpr auto const* c_player_count = "player_count";
+constexpr auto const* c_initial_scores = "initial_scores";
 
 constexpr auto const c_update_time = 1000 / 30;
 
@@ -103,6 +104,7 @@ bool retrieveLobby(CSteamID lobby_id, LobbyParams& lobby_params)
     { c_field_size, Member<LobbyParams, QPoint, &LobbyParams::field_size_>::read },
     { c_game_speed, Member<LobbyParams, int, &LobbyParams::game_speed_>::read },
     { c_player_count, Member<LobbyParams, Logic::PlayerId, &LobbyParams::player_count_>::read },
+    { c_initial_scores, Member<LobbyParams, Logic::Score, &LobbyParams::initial_scores_>::read },
   };
 
   lobby_params.lobby_id_ = static_cast<LobbyId>(lobby_id.ConvertToUint64());
@@ -121,6 +123,7 @@ bool writeLobbyParams(CSteamID lobby_id, LobbyParams const& lobby_params)
     { c_field_size, Member<LobbyParams, QPoint, &LobbyParams::field_size_>::write },
     { c_game_speed, Member<LobbyParams, int, &LobbyParams::game_speed_>::write },
     { c_player_count, Member<LobbyParams, Logic::PlayerId, &LobbyParams::player_count_>::write },
+    { c_initial_scores, Member<LobbyParams, Logic::Score, &LobbyParams::initial_scores_>::write },
   };
   return std::all_of(writers.begin(), writers.end(), [lobby_id, &lobby_params](auto iter)
   {

@@ -34,17 +34,24 @@ public:
     , all_patterns_(Utilities::createPatterns())
     , life_processor_(makeLifeProcessor(cells_))
   {
+    Q_ASSERT(Utilities::Qt::isPowerOfTwo(cells_.x()));
+    Q_ASSERT(Utilities::Qt::isPowerOfTwo(cells_.y()));
     Q_ASSERT(!QSet<LifeUnit>{ LifeUnit(0, 0, 0) }.empty());
-    //#if defined(QT_DEBUG)
-    //  for (Logic::SizeT idx = 0; idx < all_patterns_->patternCount(); ++idx)
-    //  {
-    //    auto const pattern = all_patterns_->patternAt(idx);
-    //    Q_ASSERT(!pattern->name().isEmpty());
-    //    Q_ASSERT(!pattern->points().isEmpty());
-    //    Q_ASSERT(pattern->scores() > 0);
-    //    Q_ASSERT(pattern->size() != QPoint());
-    //  }
-    //#endif
+    Q_ASSERT(([&patterns = all_patterns_]() -> bool
+    {
+      for (Logic::SizeT idx = 0; idx < 0/*patterns.patternCount()*/; ++idx)
+      {
+        auto const pattern = patterns.patternAt(idx);
+        if (pattern->name().isEmpty()
+            || pattern->points().isEmpty()
+            || pattern->scores() <= 0
+            || pattern->size() == QPoint())
+        {
+          return false;
+        }
+      }
+      return true;
+    })());
   }
   ~GameModelImpl() override
   {
@@ -77,15 +84,10 @@ public:
     return life_processor_->lifeUnits();
   }
 
-  void addUnit(QPoint position, PlayerId player) override
+  LifeProcessor& lifeProcessor() override
   {
-    position = loopPos(position, cells_);
-    life_processor_->addUnit(LifeUnit(static_cast<uint16_t>(position.x()),
-                                      static_cast<uint16_t>(position.y()), player));
-  }
-  void makeStep() override
-  {
-    life_processor_->processLife();
+    Q_ASSERT(life_processor_ != nullptr);
+    return *life_processor_;
   }
 
 private:
