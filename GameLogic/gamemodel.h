@@ -82,7 +82,7 @@ struct LifeProcessor
   virtual int computationDuration() const = 0;
 
   virtual void addUnit(LifeUnit unit) = 0;
-  virtual void processLife() = 0;
+  virtual void processLife(bool compute) = 0;
 };
 using LifeProcessorPtr = std::unique_ptr<LifeProcessor>;
 

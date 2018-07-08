@@ -24,7 +24,8 @@ public:
   ~GameController() override;
 
 public slots:
-  virtual bool addPattern(PatternTrs pattern_trs);
+  bool addPattern(PatternTrs pattern_trs);
+  bool onStop();
 
 signals:
   void stepMade(Score scores);
@@ -49,6 +50,7 @@ private:
   Score scores_ = 0;
   uint64_t average_computation_duration_ = 0;
   decltype(game_model_->lifeUnits().size()) life_on_last_step_ = 0;
+  bool stopped_ = false;
 };
 using GameControllerPtr = QPointer<GameController>;
 

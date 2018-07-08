@@ -13,7 +13,7 @@ MainWindow {
     var gameView = mainWindow.createGame(gameParams)
     gameView.width = mainMenu.width
     gameView.height = mainMenu.height
-    mainMenu.push(gameView)
+    mainMenu.push(gameView).focus = true
   }
 
   Page {

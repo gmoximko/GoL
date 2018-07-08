@@ -143,17 +143,20 @@ void CPULifeProcessor::addUnit(LifeUnit unit)
   input_[position] = 1;
 }
 
-void CPULifeProcessor::processLife()
+void CPULifeProcessor::processLife(bool compute)
 {
   if (!computed())
   {
     return;
   }
   prepareLifeUnits();
-  computation_duration_.start();
-  for (auto& life_process : life_processes_)
+  if (compute)
   {
-    life_process.start();
+    computation_duration_.start();
+    for (auto& life_process : life_processes_)
+    {
+      life_process.start();
+    }
   }
 }
 

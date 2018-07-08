@@ -26,7 +26,7 @@ public:
   }
 
   void addUnit(LifeUnit unit) override;
-  void processLife() override;
+  void processLife(bool compute) override;
 
 private:  
   void prepareLifeUnits();

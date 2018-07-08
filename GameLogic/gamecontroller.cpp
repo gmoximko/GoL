@@ -70,6 +70,12 @@ bool GameController::addPattern(PatternTrs pattern_trs)
   return result;
 }
 
+bool GameController::onStop()
+{
+  stopped_ = !stopped_;
+  return stopped_;
+}
+
 void GameController::timerEvent(QTimerEvent* event)
 {
   if (event->timerId() == step_timer_id_)
@@ -86,7 +92,7 @@ void GameController::makeStep()
     return;
   }
   applyCommands();
-  life_processor.processLife();
+  life_processor.processLife(!stopped_);
   updateStep();
   emit stepMade(scores_);
 }
@@ -104,6 +110,11 @@ void GameController::applyCommands()
 
 void GameController::updateStep()
 {
+  if (stopped_)
+  {
+    return;
+  }
+
   auto const& life_processor = game_model_->lifeProcessor();
   auto const duration = life_processor.computationDuration();
   Q_ASSERT(duration >= 0);

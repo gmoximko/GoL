@@ -64,6 +64,8 @@ QQuickItem* MainWindow::createGame(GameParams* game_params)
 
   connect(game_view_.data(), &GameView::patternSelected,
           game_controller_.data(), &Logic::GameController::addPattern);
+  connect(game_view_.data(), &GameView::stop,
+          game_controller_.data(), &Logic::GameController::onStop);
   connect(game_controller_.data(), &Logic::GameController::stepMade,
           game_view_.data(), &GameView::onStepMade);
   suppressSignals(game_network_.data(), true);

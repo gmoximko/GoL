@@ -82,6 +82,7 @@ signals:
   void currentPatternChanged();
   void scoresChanged();
   bool patternSelected(Logic::PatternTrs pattern_trs);
+  bool stop();
 
 private:
   using MaybeTRS = QPair<bool, QMatrix>;

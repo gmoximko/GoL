@@ -217,14 +217,17 @@ void GPULifeProcessor::addUnit(LifeUnit unit)
   [(id)self_ addUnit: (unit.x() + unit.y() * field_size_.y())];
 }
 
-void GPULifeProcessor::processLife()
+void GPULifeProcessor::processLife(bool compute)
 {
   if (!computed())
   {
     return;
   }
   prepareLifeUnits();
-  [(id)self_ processLife];
+  if (compute)
+  {
+    [(id)self_ processLife];
+  }
 }
 
 void GPULifeProcessor::prepareLifeUnits()

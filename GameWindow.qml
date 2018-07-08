@@ -21,6 +21,17 @@ Page {
     }
   ]
 
+  Keys.onReleased: {
+    switch (event.key) {
+    case Qt.Key_Space:
+      event.accepted = true
+      gameView.stop()
+      break
+    default:
+      break
+    }
+  }
+
   GameView {
     id: gameView
     width: gameWindow.width
