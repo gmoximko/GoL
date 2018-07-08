@@ -16,11 +16,14 @@ public:
     return life_units_;
   }
   bool computed() const override;
+  int computationDuration() const override;
 
   void addUnit(LifeUnit unit) override;
   void processLife() override;
 
 private:
+  void prepareLifeUnits();
+
   void* self_;
   QPoint field_size_;
   LifeUnits life_units_;

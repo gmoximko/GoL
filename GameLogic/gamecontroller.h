@@ -7,7 +7,7 @@
 
 namespace Logic {
 
-struct GameController : public QObject
+class GameController final : public QObject
 {
   Q_OBJECT
 
@@ -38,6 +38,7 @@ private:
 
   void makeStep();
   void applyCommands();
+  void updateStep();
 
   int const step_timer_id_ = 0;
   PlayerId const player_ = 0;
@@ -46,6 +47,7 @@ private:
   std::vector<Command> commands_;
   StepId step_ = 0;
   Score scores_ = 0;
+  uint64_t average_computation_duration_ = 0;
   decltype(game_model_->lifeUnits().size()) life_on_last_step_ = 0;
 };
 using GameControllerPtr = QPointer<GameController>;

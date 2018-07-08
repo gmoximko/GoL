@@ -48,6 +48,7 @@ static NSString* const kernel_src =
 
 - (BOOL) computed;
 - (UInt8) unitAt: (NSUInteger)position;
+- (CFTimeInterval) computationDuration;
 - (void) processLife;
 - (void) addUnit: (NSUInteger)position;
 
@@ -64,6 +65,7 @@ static NSString* const kernel_src =
   MTLSize threads_per_group_;
 
   BOOL computed_;
+  CFTimeInterval computation_duration_;
 }
 
 - (NSUInteger) fieldSize
@@ -82,6 +84,11 @@ static NSString* const kernel_src =
   return ((UInt8*)[input_ contents])[position];
 }
 
+- (CFTimeInterval) computationDuration
+{
+  return computation_duration_;
+}
+
 - (id) initWithWidth: (NSUInteger)width Height:(NSUInteger)height
 {
   self = [super init];
@@ -89,6 +96,7 @@ static NSString* const kernel_src =
 
   field_size_ = MTLSizeMake(width, height, 1);
   computed_ = YES;
+  computation_duration_ = 0;
 
   NSError* error = nil;
   id<MTLDevice> device = MTLCreateSystemDefaultDevice();
@@ -136,6 +144,7 @@ static NSString* const kernel_src =
     return;
   }
   computed_ = NO;
+  NSDate *start = [NSDate date];
 
   id<MTLCommandBuffer> command_buffer = [command_queue_ commandBuffer];
   command_buffer.label = @"LifeStep";
@@ -151,6 +160,7 @@ static NSString* const kernel_src =
   {
     assert([[cb error] code] == 0);
     [self handleComputeCompletion];
+    computation_duration_ = -[start timeIntervalSinceNow];
   }];
   [command_buffer commit];
 }
@@ -197,12 +207,27 @@ bool GPULifeProcessor::computed() const
   return [(id)self_ computed];
 }
 
+int GPULifeProcessor::computationDuration() const
+{
+  return static_cast<int>([(id)self_ computationDuration] * 1000);
+}
+
 void GPULifeProcessor::addUnit(LifeUnit unit)
 {
   [(id)self_ addUnit: (unit.x() + unit.y() * field_size_.y())];
 }
 
 void GPULifeProcessor::processLife()
+{
+  if (!computed())
+  {
+    return;
+  }
+  prepareLifeUnits();
+  [(id)self_ processLife];
+}
+
+void GPULifeProcessor::prepareLifeUnits()
 {
   id impl = (id)self_;
   life_units_.clear();
@@ -217,8 +242,6 @@ void GPULifeProcessor::processLife()
       life_units_.emplace_back(LifeUnit(x, y));
     }
   }
-
-  [impl processLife];
 }
 
 } // Logic

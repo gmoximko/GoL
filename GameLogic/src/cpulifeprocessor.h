@@ -3,6 +3,8 @@
 
 #include <cstdint>
 
+#include <QTime>
+
 #include "../gamemodel.h"
 
 namespace Logic {
@@ -18,6 +20,10 @@ public:
     return life_units_;
   }
   bool computed() const override;
+  int computationDuration() const override
+  {
+    return last_computation_duration_;
+  }
 
   void addUnit(LifeUnit unit) override;
   void processLife() override;
@@ -33,6 +39,9 @@ private:
   std::vector<LifeProcessChunk> life_processes_;
   std::vector<uint8_t> input_;
   std::vector<uint8_t> output_;
+  QMutex mutex_;
+  QTime computation_duration_;
+  int last_computation_duration_ = 0;
 };
 
 } // Logic

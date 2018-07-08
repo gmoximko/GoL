@@ -68,14 +68,15 @@ private:
 
 } // namespace
 
-class CPULifeProcessor::LifeProcessChunk : public QRunnable
+class CPULifeProcessor::LifeProcessChunk final : public QRunnable
 {
 public:
-  explicit LifeProcessChunk(QPoint range, QPoint field_size, Buffer const& input, Buffer& output)
+  explicit LifeProcessChunk(QPoint range, QPoint field_size, Buffer const& input, Buffer& output, CPULifeProcessor& processor)
     : range_(range)
     , life_process_(field_size.x(), field_size.y())
     , input_(input)
     , output_(output)
+    , processor_(processor)
   {
     setAutoDelete(false);
   }
@@ -87,6 +88,7 @@ public:
 
   void start()
   {
+    Q_ASSERT(computed());
     computed_ = false;
     threadPool().start(this);
   }
@@ -96,7 +98,9 @@ public:
     {
       life_process_.lifeStep(input_, output_, idx);
     }
+    QMutexLocker locker(&processor_.mutex_);
     computed_ = true;
+    processor_.handleComputeCompletion();
   }
 
 private:
@@ -104,6 +108,7 @@ private:
   LifeProcess const life_process_;
   Buffer const& input_;
   Buffer& output_;
+  CPULifeProcessor& processor_;
   bool computed_ = true;
 };
 
@@ -120,13 +125,14 @@ CPULifeProcessor::CPULifeProcessor(QPoint field_size)
   for (int idx = 0; idx < thread_count; ++idx)
   {
     auto const range = QPoint(chunk_size * idx, chunk_size * (idx + 1));
-    life_processes_.push_back(LifeProcessChunk(range, field_size_, input_, output_));
+    life_processes_.emplace_back(range, field_size_, input_, output_, *this);
   }
 }
 
 CPULifeProcessor::~CPULifeProcessor()
 {
   while (!computed());
+  QMutexLocker locker(&mutex_);
 }
 
 void CPULifeProcessor::addUnit(LifeUnit unit)
@@ -139,12 +145,12 @@ void CPULifeProcessor::addUnit(LifeUnit unit)
 
 void CPULifeProcessor::processLife()
 {
-  prepareLifeUnits();
   if (!computed())
   {
     return;
   }
-  handleComputeCompletion();
+  prepareLifeUnits();
+  computation_duration_.start();
   for (auto& life_process : life_processes_)
   {
     life_process.start();
@@ -176,7 +182,11 @@ void CPULifeProcessor::prepareLifeUnits()
 
 void CPULifeProcessor::handleComputeCompletion()
 {
-  input_.swap(output_);
+  if (computed())
+  {
+    input_.swap(output_);
+    last_computation_duration_ = computation_duration_.elapsed();
+  }
 }
 
 } // Logic

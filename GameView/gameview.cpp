@@ -154,7 +154,7 @@ void GameView::rotatePattern(qreal angle)
 void GameView::selectPattern()
 {
   Q_ASSERT(pattern_trs_.first);
-  class SingleCell : public Logic::Pattern
+  class SingleCell final : public Logic::Pattern
   {
   public:
     QString name() const override

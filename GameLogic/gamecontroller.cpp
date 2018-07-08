@@ -1,4 +1,5 @@
 #include <QTimerEvent>
+#include <QDebug>
 
 #include "gamecontroller.h"
 
@@ -47,7 +48,11 @@ GameController::GameController(QObject* parent, Params const& params)
   Q_ASSERT(game_model_ != nullptr);
 }
 
-GameController::~GameController() = default;
+GameController::~GameController()
+{
+  qDebug() << "~GameController() Average computation duration: "
+           << average_computation_duration_ / static_cast<qreal>(step_);
+}
 
 bool GameController::addPattern(PatternTrs pattern_trs)
 {
@@ -80,17 +85,9 @@ void GameController::makeStep()
   {
     return;
   }
-  auto const current_life = life_processor.lifeUnits().size();
-  if (current_life > life_on_last_step_)
-  {
-    Q_ASSERT(current_life >= 0);
-    Q_ASSERT(life_on_last_step_ >= 0);
-    scores_ += current_life - life_on_last_step_;
-    life_on_last_step_ = current_life;
-  }
   applyCommands();
-  ++step_;
   life_processor.processLife();
+  updateStep();
   emit stepMade(scores_);
 }
 
@@ -103,6 +100,25 @@ void GameController::applyCommands()
     command.apply(life_processor);
   }
   commands_.clear();
+}
+
+void GameController::updateStep()
+{
+  auto const& life_processor = game_model_->lifeProcessor();
+  auto const duration = life_processor.computationDuration();
+  Q_ASSERT(duration >= 0);
+  average_computation_duration_ += static_cast<decltype(average_computation_duration_)>(duration);
+
+  ++step_;
+  auto const current_life = life_processor.lifeUnits().size();
+  if (current_life <= life_on_last_step_)
+  {
+    return;
+  }
+  Q_ASSERT(current_life >= 0);
+  Q_ASSERT(life_on_last_step_ >= 0);
+  scores_ += current_life - life_on_last_step_;
+  life_on_last_step_ = current_life;
 }
 
 } // Logic

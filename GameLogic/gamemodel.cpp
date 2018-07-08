@@ -26,7 +26,7 @@ LifeProcessorPtr makeLifeProcessor(QPoint cells)
 }
 
 template<class PatternsStrategy = AccumulatePatterns>
-class GameModelImpl : public GameModel
+class GameModelImpl final : public GameModel
 {
 public:
   explicit GameModelImpl(Params const& params)

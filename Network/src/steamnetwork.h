@@ -9,7 +9,7 @@
 
 namespace Network {
 
-class SteamLobby : public Lobby
+class SteamLobby final : public Lobby
 {
   Q_OBJECT
 
@@ -51,7 +51,7 @@ private:
   STEAM_CALLBACK(SteamLobby, onP2PSessionConnectFailed, P2PSessionConnectFail_t, on_p2p_session_connect_failed_);
 };
 
-class SteamNetwork : public GameNetwork
+class SteamNetwork final : public GameNetwork
 {
   Q_OBJECT
 

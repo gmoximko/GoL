@@ -92,7 +92,7 @@ std::tuple<QString, QPoint, Logic::Points> readPattern(QTextStream& stream)
   return std::make_tuple(std::move(name), size, std::move(points));
 }
 
-class PatternImpl : public Logic::Pattern
+class PatternImpl final : public Logic::Pattern
 {
 public:
   explicit PatternImpl(QResource const& resource)
@@ -140,7 +140,7 @@ private:
   Logic::Points points_;
 };
 
-class PatternsImpl : public Patterns
+class PatternsImpl final : public Patterns
 {
 public:
   explicit PatternsImpl(QString patterns_path)

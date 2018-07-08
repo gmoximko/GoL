@@ -18,6 +18,9 @@ Column {
     visible: isMultiplayer
     text: qsTr("Lobby")
     placeholderText: qsTr("Enter lobby name")
+    validator: RegExpValidator {
+      regExp: /[\w ]+/
+    }
 
     onTextChanged: {
       params.name = text
