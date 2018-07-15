@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include <QTimerEvent>
 #include <QDebug>
 
@@ -39,6 +41,7 @@ GameController::GameController(QObject* parent, Params const& params)
   : QObject(parent)
   , step_timer_id_(startTimer(params.update_time_, Qt::TimerType::PreciseTimer))
   , player_(params.current_player_)
+  , score_addition_(params.initial_scores_)
   , game_model_(params.game_model_)
   , scores_(params.initial_scores_)
 {
@@ -120,16 +123,11 @@ void GameController::updateStep()
   Q_ASSERT(duration >= 0);
   average_computation_duration_ += static_cast<decltype(average_computation_duration_)>(duration);
 
-  ++step_;
   auto const current_life = life_processor.lifeUnits().size();
-  if (current_life <= life_on_last_step_)
-  {
-    return;
-  }
-  Q_ASSERT(current_life >= 0);
-  Q_ASSERT(life_on_last_step_ >= 0);
-  scores_ += current_life - life_on_last_step_;
-  life_on_last_step_ = current_life;
+  auto const cells = game_model_->cells();
+  auto const field_size = cells.x() * cells.y();
+  scores_ += std::ceil(score_addition_ * (current_life / static_cast<qreal>(field_size)));
+  ++step_;
 }
 
 } // Logic

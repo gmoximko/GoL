@@ -4,26 +4,12 @@
 #include "../Utilities/qtutilities.h"
 #include "../Utilities/rleparser.h"
 #include "src/patterns.h"
-#include "src/gpulifeprocessor.h"
-#include "src/cpulifeprocessor.h"
+#include "src/lifeprocessor.h"
 #include "gamemodel.h"
 
 namespace Logic {
 
 namespace {
-
-LifeProcessorPtr makeLifeProcessor(QPoint cells)
-{
-  try
-  {
-    return std::make_unique<GPULifeProcessor>(cells);
-  }
-  catch(std::exception const& e)
-  {
-    qDebug() << "Impossible to create GPULifeProcessor! " << e.what();
-    return std::make_unique<CPULifeProcessor>(cells);
-  }
-}
 
 template<class PatternsStrategy = AccumulatePatterns>
 class GameModelImpl final : public GameModel
@@ -32,7 +18,7 @@ public:
   explicit GameModelImpl(Params const& params)
     : cells_(params.cells_)
     , all_patterns_(Utilities::createPatterns())
-    , life_processor_(makeLifeProcessor(cells_))
+    , life_processor_(createLifeProcessor(cells_))
   {
     Q_ASSERT(Utilities::Qt::isPowerOfTwo(cells_.x()));
     Q_ASSERT(Utilities::Qt::isPowerOfTwo(cells_.y()));

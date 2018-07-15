@@ -51,8 +51,8 @@ Column {
   ComboBox {
     id: gameSpeed
     clip: true
-    currentIndex: 1
-    model: [50, 100, 200, 300, 400, 500]
+    currentIndex: 2
+    model: [30, 50, 100, 150, 1000]
 
     onCurrentTextChanged: {
       params.gameSpeed = Number(currentText)

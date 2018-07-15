@@ -85,6 +85,7 @@ struct LifeProcessor
   virtual void processLife(bool compute) = 0;
 };
 using LifeProcessorPtr = std::unique_ptr<LifeProcessor>;
+LifeProcessorPtr createLifeProcessor(QPoint field_size);
 
 struct GameModel
 {

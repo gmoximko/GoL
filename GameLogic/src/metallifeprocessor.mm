@@ -1,7 +1,7 @@
 #import <Foundation/Foundation.h>
 #import <MetalKit/MetalKit.h>
 
-#import "gpulifeprocessor.h"
+#import "lifeprocessor.h"
 
 static NSString* const kernel_src =
     @"#include <metal_stdlib>\n"
@@ -47,10 +47,9 @@ static NSString* const kernel_src =
 @interface MetalLifeProcessor : NSObject
 
 - (BOOL) computed;
-- (UInt8) unitAt: (NSUInteger)position;
+- (void*) content;
 - (CFTimeInterval) computationDuration;
 - (void) processLife;
-- (void) addUnit: (NSUInteger)position;
 
 @end
 
@@ -78,10 +77,9 @@ static NSString* const kernel_src =
   return computed_;
 }
 
-- (UInt8) unitAt: (NSUInteger)position
+- (void*) content
 {
-  assert(position < [self fieldSize]);
-  return ((UInt8*)[input_ contents])[position];
+  return [input_ contents];
 }
 
 - (CFTimeInterval) computationDuration
@@ -105,7 +103,7 @@ static NSString* const kernel_src =
     [NSException raise: NSGenericException format: @"Metal is not supported on this device"];
   }
 
-  MTLCompileOptions* options = [[MTLCompileOptions new] autorelease];
+  MTLCompileOptions* options = [MTLCompileOptions new];
   options.preprocessorMacros =
       @{
         @"WIDTH" : [NSNumber numberWithUnsignedLong: field_size_.width],
@@ -165,13 +163,6 @@ static NSString* const kernel_src =
   [command_buffer commit];
 }
 
-- (void) addUnit: (NSUInteger)position
-{
-  assert(computed_);
-  assert(position < [self fieldSize]);
-  ((UInt8*)[input_ contents])[position] = 1;
-}
-
 - (void) handleComputeCompletion
 {
   computed_ = YES;
@@ -185,66 +176,57 @@ static NSString* const kernel_src =
 
 namespace Logic {
 
-GPULifeProcessor::GPULifeProcessor(QPoint field_size)
-try
-  : self_([[MetalLifeProcessor alloc] initWithWidth: field_size.x() Height: field_size.y()])
-  , field_size_(field_size)
-{}
-catch(NSException* e)
-{
-  auto const* msg = [[e reason] cStringUsingEncoding: NSUTF8StringEncoding];
-  throw std::runtime_error(msg);
-}
+namespace {
 
-GPULifeProcessor::~GPULifeProcessor()
+class GPULifeProcessor final : public LifeProcessorImpl
 {
-  while (!computed());
-  [(id)self_ dealloc];
-}
-
-bool GPULifeProcessor::computed() const
-{
-  return [(id)self_ computed];
-}
-
-int GPULifeProcessor::computationDuration() const
-{
-  return static_cast<int>([(id)self_ computationDuration] * 1000);
-}
-
-void GPULifeProcessor::addUnit(LifeUnit unit)
-{
-  [(id)self_ addUnit: (unit.x() + unit.y() * field_size_.y())];
-}
-
-void GPULifeProcessor::processLife(bool compute)
-{
-  if (!computed())
+public:
+  explicit GPULifeProcessor(QPoint field_size)
+  try
+    : LifeProcessorImpl(field_size)
+    , self_([[MetalLifeProcessor alloc]
+        initWithWidth: static_cast<NSUInteger>(field_size.x())
+                Height: static_cast<NSUInteger>(field_size.y())])
+  {}
+  catch(NSException* e)
   {
-    return;
+    auto const* msg = [[e reason] cStringUsingEncoding: NSUTF8StringEncoding];
+    throw std::runtime_error(msg);
   }
-  prepareLifeUnits();
-  if (compute)
+  ~GPULifeProcessor() override
   {
-    [(id)self_ processLife];
+    while (!computed());
   }
-}
 
-void GPULifeProcessor::prepareLifeUnits()
+public: // LifeProcessor
+  bool computed() const override
+  {
+    return [self_ computed];
+  }
+  int computationDuration() const override
+  {
+    return static_cast<int>([self_ computationDuration] * 1000);
+  }
+
+protected: // LifeProcessorImpl
+  void processLife() override
+  {
+    [self_ processLife];
+  }
+  uint8_t* data() override
+  {
+    return static_cast<uint8_t*>([self_ content]);
+  }
+
+private:
+  MetalLifeProcessor* self_;
+};
+
+} // namespace
+
+LifeProcessorPtr createGPULifeProcessor(QPoint field_size)
 {
-  id impl = (id)self_;
-  life_units_.clear();
-
-  auto const field_size = static_cast<size_t>(field_size_.x() * field_size_.y());
-  for (size_t idx = 0; idx < field_size; ++idx)
-  {
-    if ([impl unitAt: idx] != 0)
-    {
-      auto const x = static_cast<uint16_t>(idx % field_size_.x());
-      auto const y = static_cast<uint16_t>(idx / field_size_.y());
-      life_units_.emplace_back(LifeUnit(x, y));
-    }
-  }
+  return std::make_unique<GPULifeProcessor>(field_size);
 }
 
 } // Logic

@@ -1,7 +1,8 @@
 #include <QThreadPool>
 #include <QDebug>
+#include <QTime>
 
-#include "cpulifeprocessor.h"
+#include "lifeprocessor.h"
 
 namespace Logic {
 
@@ -66,7 +67,62 @@ private:
   Index const height_ = 0;
 };
 
-} // namespace
+class CPULifeProcessor final : public LifeProcessorImpl
+{
+public:
+  explicit CPULifeProcessor(QPoint field_size)
+    : LifeProcessorImpl(field_size)
+    , input_(field_size.x() * field_size.y())
+    , output_(field_size.x() * field_size.y())
+  {
+    qDebug() << "Active threads: " << threadPool().activeThreadCount()
+             << " Max threads: " << threadPool().maxThreadCount();
+    auto const thread_count = threadPool().maxThreadCount();
+    auto const chunk_size = (field_size.x() * field_size.y()) / thread_count;
+    for (int idx = 0; idx < thread_count; ++idx)
+    {
+      auto const range = QPoint(chunk_size * idx, chunk_size * (idx + 1));
+      life_processes_.emplace_back(range, field_size, input_, output_, *this);
+    }
+  }
+  ~CPULifeProcessor() override
+  {
+    while (!computed());
+    QMutexLocker locker(&mutex_);
+  }
+
+public: // LifeProcessor
+  bool computed() const override;
+  int computationDuration() const override
+  {
+    return last_computation_duration_;
+  }
+
+protected: // LifeProcessorImpl
+  void processLife() override;
+  uint8_t* data() override
+  {
+    return input_.data();
+  }
+
+private:
+  void handleComputeCompletion()
+  {
+    if (computed())
+    {
+      input_.swap(output_);
+      last_computation_duration_ = computation_duration_.elapsed();
+    }
+  }
+
+  class LifeProcessChunk;
+  std::vector<LifeProcessChunk> life_processes_;
+  std::vector<uint8_t> input_;
+  std::vector<uint8_t> output_;
+  QMutex mutex_;
+  QTime computation_duration_;
+  int last_computation_duration_ = 0;
+};
 
 class CPULifeProcessor::LifeProcessChunk final : public QRunnable
 {
@@ -112,51 +168,12 @@ private:
   bool computed_ = true;
 };
 
-CPULifeProcessor::CPULifeProcessor(QPoint field_size)
-  : field_size_(field_size)
-  , input_(field_size_.x() * field_size_.y())
-  , output_(field_size_.x() * field_size_.y())
+void CPULifeProcessor::processLife()
 {
-  qDebug() << "Active threads: " << threadPool().activeThreadCount()
-           << " Max threads: " << threadPool().maxThreadCount();
-
-  auto const thread_count = threadPool().maxThreadCount();
-  auto const chunk_size = (field_size_.x() * field_size_.y()) / thread_count;
-  for (int idx = 0; idx < thread_count; ++idx)
+  computation_duration_.start();
+  for (auto& life_process : life_processes_)
   {
-    auto const range = QPoint(chunk_size * idx, chunk_size * (idx + 1));
-    life_processes_.emplace_back(range, field_size_, input_, output_, *this);
-  }
-}
-
-CPULifeProcessor::~CPULifeProcessor()
-{
-  while (!computed());
-  QMutexLocker locker(&mutex_);
-}
-
-void CPULifeProcessor::addUnit(LifeUnit unit)
-{
-  auto const position = static_cast<Index>(unit.x() + unit.y() * field_size_.y());
-  Q_ASSERT(computed());
-  Q_ASSERT(position < input_.size());
-  input_[position] = 1;
-}
-
-void CPULifeProcessor::processLife(bool compute)
-{
-  if (!computed())
-  {
-    return;
-  }
-  prepareLifeUnits();
-  if (compute)
-  {
-    computation_duration_.start();
-    for (auto& life_process : life_processes_)
-    {
-      life_process.start();
-    }
+    life_process.start();
   }
 }
 
@@ -168,28 +185,11 @@ bool CPULifeProcessor::computed() const
   });
 }
 
-void CPULifeProcessor::prepareLifeUnits()
-{
-  life_units_.clear();
+} // namespace
 
-  for (Index idx = 0; idx < input_.size(); ++idx)
-  {
-    if (input_[idx] != 0)
-    {
-      auto const x = static_cast<uint16_t>(idx % field_size_.x());
-      auto const y = static_cast<uint16_t>(idx / field_size_.y());
-      life_units_.emplace_back(LifeUnit(x, y));
-    }
-  }
-}
-
-void CPULifeProcessor::handleComputeCompletion()
+LifeProcessorPtr createCPULifeProcessor(QPoint field_size)
 {
-  if (computed())
-  {
-    input_.swap(output_);
-    last_computation_duration_ = computation_duration_.elapsed();
-  }
+  return std::make_unique<CPULifeProcessor>(field_size);
 }
 
 } // Logic

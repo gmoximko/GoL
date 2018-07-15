@@ -1,4 +1,5 @@
-QT += quick
+QT += quick \
+      concurrent
 CONFIG += c++14 app_bundle
 
 # The following define makes your compiler emit warnings if you use
@@ -19,7 +20,8 @@ SOURCES += main.cpp \
     GameLogic/gamemodel.cpp \
     GameLogic/src/cpulifeprocessor.cpp \
     Network/src/steamnetwork.cpp \
-    GameLogic/gamecontroller.cpp
+    GameLogic/gamecontroller.cpp \
+    GameLogic/src/lifeprocessor.cpp
 
 RESOURCES += qml.qrc \
              patterns.qrc
@@ -43,14 +45,13 @@ HEADERS += \
     GameLogic/gamecontroller.h \
     GameLogic/gamemodel.h \
     GameLogic/src/patterns.h \
-    GameLogic/src/gpulifeprocessor.h \
-    GameLogic/src/cpulifeprocessor.h \
     Network/gamenetwork.h \
-    Network/src/steamnetwork.h
+    Network/src/steamnetwork.h \
+    GameLogic/src/lifeprocessor.h
 
 macx|ios {
-#    QMAKE_OBJECTIVE_CFLAGS += -fobjc-arc
-#    QMAKE_OBJECTIVE_CXXFLAGS += -fobjc-arc
+    QMAKE_OBJECTIVE_CFLAGS += -fobjc-arc
+    QMAKE_OBJECTIVE_CXXFLAGS += -fobjc-arc
     LIBS += -framework Foundation -framework Metal -framework MetalKit
     OBJECTIVE_SOURCES += GameLogic/src/metallifeprocessor.mm
 }
