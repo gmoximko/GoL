@@ -48,7 +48,7 @@ private:
   GameModelMutablePtr game_model_;
   std::vector<Command> commands_;
   StepId step_ = 0;
-  Score scores_ = 0;
+  Score const scores_ = 0;
   uint64_t average_computation_duration_ = 0;
   bool stopped_ = false;
 };

@@ -22,6 +22,8 @@ public:
   {
     Q_ASSERT(Utilities::Qt::isPowerOfTwo(cells_.x()));
     Q_ASSERT(Utilities::Qt::isPowerOfTwo(cells_.y()));
+    Q_ASSERT(cells_.x() <= (1 << c_pow_of_two_max_field_dimension));
+    Q_ASSERT(cells_.y() <= (1 << c_pow_of_two_max_field_dimension));
     Q_ASSERT(!QSet<LifeUnit>{ LifeUnit(0, 0, 0) }.empty());
     Q_ASSERT(([&patterns = all_patterns_]() -> bool
     {

@@ -60,12 +60,14 @@ Column {
   }
   ComboBox {
     id: initialScores
+    enabled: false
+    visible: false
     clip: true
     currentIndex: 1
-    model: [500, 1000, 1500, 2000, 2500]
+    model: [500, 1000, 1500, 2000, 2500, 2000000000]
 
     onCurrentTextChanged: {
-      params.initialScores = Number(currentText)
+//      params.initialScores = Number(currentText)
     }
   }
 }

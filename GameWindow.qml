@@ -8,7 +8,7 @@ Page {
   id: gameWindow
   width: parent.width
   height: parent.height
-  title: qsTr("Scores: ") + gameView.scores
+  title: qsTr("Game of life")// + gameView.scores
 
   states: [
     State {

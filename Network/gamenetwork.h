@@ -1,9 +1,6 @@
 #ifndef GAMENETWORK_H
 #define GAMENETWORK_H
 
-#include <memory>
-
-#include <QPoint>
 #include <QVariantList>
 #include <QString>
 #include <QObject>
@@ -31,7 +28,7 @@ public:
   QPoint field_size_;
   int game_speed_ = 0;
   Logic::PlayerId player_count_ = 0;
-  Logic::Score initial_scores_ = 0;
+  Logic::Score initial_scores_ = std::numeric_limits<Logic::Score>::max();
 };
 using Lobbies = QVariantList;
 
@@ -67,7 +64,10 @@ signals:
   void lobbiesUpdated(Lobbies lobbies);
 };
 using GameNetworkPtr = QPointer<GameNetwork>;
-GameNetworkPtr createGameNetwork(QObject* parent);
+inline GameNetworkPtr createGameNetwork(QObject*)
+{
+  throw std::runtime_error("Game network initialization failed!");
+}
 
 inline bool operator == (LobbyParams const& lhs, LobbyParams const& rhs)
 {

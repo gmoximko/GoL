@@ -87,7 +87,7 @@ static NSString* const kernel_src =
   return computation_duration_;
 }
 
-- (id) initWithWidth: (NSUInteger)width Height:(NSUInteger)height
+- (id) initWithWidth: (NSUInteger)width Height: (NSUInteger)height
 {
   self = [super init];
   assert(self);

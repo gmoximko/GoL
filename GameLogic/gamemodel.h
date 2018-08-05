@@ -2,6 +2,7 @@
 #define GAMEMODEL_H
 
 #include <memory>
+
 #include <QSharedPointer>
 #include <QPoint>
 #include <QVector>

@@ -35,7 +35,34 @@ void hashCombine(uint& seed, T&& value, Args&& ...args)
 template<typename T, typename = std::enable_if_t<std::is_integral<T>::value>>
 bool isPowerOfTwo(T value)
 {
-  return value != 0 && ((value & (value - 1)) == 0);
+  return value > 0 && ((value & (value - 1)) == 0);
+}
+
+template<typename T>
+qreal normalized(T value, T min, T max)
+{
+  Q_ASSERT(min < max);
+  Q_ASSERT(value >= min);
+  Q_ASSERT(value <= max);
+  auto const result = 1.0 - (max - value) / static_cast<qreal>(max - min);
+  Q_ASSERT(result >= 0.0);
+  Q_ASSERT(result <= 1.0);
+  return result;
+}
+
+template<typename T>
+T clamp(T value, T min, T max)
+{
+  Q_ASSERT(min < max);
+  if (value < min)
+  {
+    return min;
+  }
+  if (value > max)
+  {
+    return max;
+  }
+  return value;
 }
 
 }} // Utilities::Qt

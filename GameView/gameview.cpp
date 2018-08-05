@@ -15,19 +15,6 @@ constexpr auto const c_pixels_per_cell = QPointF(10.0, 10.0);
 constexpr auto const c_life_pixels_ratio = 0.3;
 constexpr auto const c_max_cells_in_screen = 1024;
 constexpr auto const c_min_cells_in_screen = 8;
-constexpr auto const c_scale_to_hide_grid = 0.2;
-
-template<typename T>
-qreal normalizeValue(T value, T min, T max)
-{
-  Q_ASSERT(min < max);
-  Q_ASSERT(value >= min);
-  Q_ASSERT(value <= max);
-  auto const result = 1.0 - (max - value) / static_cast<qreal>(max - min);
-  Q_ASSERT(result >= 0.0);
-  Q_ASSERT(result <= 1.0);
-  return result;
-}
 
 QColor playerColor(Logic::PlayerId player)
 {
@@ -96,15 +83,6 @@ void GameView::paint(QPainter* painter_ptr)
   drawSelectedCell(painter);
   painter.restore();
 
-  auto const normalized_scale = normalizeValue(field_scale_, minScale(), maxScale());
-  if (normalized_scale < c_scale_to_hide_grid)
-  {
-    return;
-  }
-  else if (normalized_scale < 1.0)
-  {
-    painter.setOpacity(normalized_scale);
-  }
   drawGrid(painter);
   drawCoordinates(painter);
 }
@@ -153,7 +131,6 @@ void GameView::rotatePattern(qreal angle)
 
 void GameView::selectPattern()
 {
-  Q_ASSERT(pattern_trs_.first);
   class SingleCell final : public Logic::Pattern
   {
   public:
@@ -171,13 +148,14 @@ void GameView::selectPattern()
     }
     Logic::Score scores() const override
     {
-      return points_.size();
+      return static_cast<Logic::Score>(points_.size());
     }
 
   private:
     Logic::Points const points_ { QPoint() };
   };
 
+  Q_ASSERT(pattern_trs_.first);
   if (current_pattern_ == nullptr)
   {
     current_pattern_ = Utilities::Qt::makeShared<SingleCell>();

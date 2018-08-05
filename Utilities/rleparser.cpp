@@ -131,7 +131,7 @@ public:
   }
   Logic::Score scores() const override
   {
-    return points_.size();
+    return static_cast<Logic::Score>(points_.size());
   }
 
 private:

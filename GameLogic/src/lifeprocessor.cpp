@@ -31,7 +31,7 @@ void LifeProcessorImpl::prepareLifeUnits()
 
   life_units_.clear();
 
-  Q_ASSERT(static_cast<size_t>(fieldSize()) % sizeof(VecType) == 0);
+  Q_ASSERT(static_cast<VecType>(fieldSize()) % sizeof(VecType) == 0);
   auto const* begin = reinterpret_cast<VecType const*>(data());
   auto const* end   = reinterpret_cast<VecType const*>(data() + fieldSize());
   for (auto const* iter = begin; iter != end; ++iter)
@@ -41,8 +41,8 @@ void LifeProcessorImpl::prepareLifeUnits()
     {
       continue;
     }
-    auto const index = static_cast<size_t>(iter - begin) * sizeof(VecType);
-    for (size_t byte = 0; byte < sizeof(VecType); ++byte)
+    auto const index = static_cast<VecType>(iter - begin) * sizeof(VecType);
+    for (VecType byte = 0; byte < sizeof(VecType); ++byte)
     {
       auto const life = bytes >> (byte * 8) & static_cast<VecType>(0xFF);
       if (life != 0)

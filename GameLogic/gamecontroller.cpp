@@ -63,7 +63,7 @@ bool GameController::addPattern(PatternTrs pattern_trs)
   auto const result = pattern_scores <= scores_;
   if (result)
   {
-    scores_ -= pattern_scores;
+//    scores_ -= pattern_scores;
     commands_.emplace_back(step_, std::move(pattern_trs), game_model_->cells(), player_);
     if (game_model_->lifeProcessor().computed())
     {
@@ -123,10 +123,10 @@ void GameController::updateStep()
   Q_ASSERT(duration >= 0);
   average_computation_duration_ += static_cast<decltype(average_computation_duration_)>(duration);
 
-  auto const current_life = life_processor.lifeUnits().size();
-  auto const cells = game_model_->cells();
-  auto const field_size = cells.x() * cells.y();
-  scores_ += std::ceil(score_addition_ * (current_life / static_cast<qreal>(field_size)));
+//  auto const current_life = life_processor.lifeUnits().size();
+//  auto const cells = game_model_->cells();
+//  auto const field_size = cells.x() * cells.y();
+//  scores_ += std::ceil(score_addition_ * (current_life / static_cast<qreal>(field_size)));
   ++step_;
 }
 

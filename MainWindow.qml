@@ -83,6 +83,7 @@ MainWindow {
       ItemDelegate {
         text: qsTr("Multiplayer")
         width: parent.width
+        visible: false
         enabled: isNetworkEnabled()
         onClicked: {
           mainMenu.push(multiplayerMenu)

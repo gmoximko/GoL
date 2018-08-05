@@ -19,7 +19,6 @@ SOURCES += main.cpp \
     Utilities/rleparser.cpp \
     GameLogic/gamemodel.cpp \
     GameLogic/src/cpulifeprocessor.cpp \
-    Network/src/steamnetwork.cpp \
     GameLogic/gamecontroller.cpp \
     GameLogic/src/lifeprocessor.cpp
 
@@ -46,7 +45,6 @@ HEADERS += \
     GameLogic/gamemodel.h \
     GameLogic/src/patterns.h \
     Network/gamenetwork.h \
-    Network/src/steamnetwork.h \
     GameLogic/src/lifeprocessor.h
 
 macx|ios {
@@ -60,10 +58,3 @@ else: unix|win32 {
     SOURCES += GameLogic/src/opencllifeprocessor.cpp
 }
 
-steamLib.files = $$PWD/redistributable_bin/osx32/
-steamLib.path = Contents/MacOS/
-QMAKE_BUNDLE_DATA += steamLib
-
-macx: LIBS += -L$$PWD/redistributable_bin/osx32/ -lsteam_api
-INCLUDEPATH += $$PWD/redistributable_bin/osx32
-DEPENDPATH += $$PWD/redistributable_bin/osx32
