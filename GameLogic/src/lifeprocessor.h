@@ -10,7 +10,9 @@ class LifeProcessorImpl : public LifeProcessor
 public:
   explicit LifeProcessorImpl(QPoint field_size)
     : field_size_(field_size)
-  {}
+  {
+    Q_ASSERT(fieldSize() % 8 == 0);
+  }
 
 public: // LifeProcessor
   LifeUnits const& lifeUnits() const final
@@ -24,7 +26,15 @@ public: // LifeProcessor
 public:
   SizeT fieldSize() const
   {
-    return field_size_.x() * field_size_.y();
+    return rows() * cols();
+  }
+  SizeT rows() const
+  {
+    return static_cast<SizeT>(field_size_.y());
+  }
+  SizeT cols() const
+  {
+    return static_cast<SizeT>(field_size_.x());
   }
 
 protected:

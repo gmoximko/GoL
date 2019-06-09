@@ -6,10 +6,12 @@ namespace Logic {
 
 void LifeProcessorImpl::addUnit(LifeUnit unit)
 {
-  auto const position = unit.x() + unit.y() * field_size_.y();
+  auto const position = unit.x() + unit.y() * rows();
   Q_ASSERT(computed());
   Q_ASSERT(position < fieldSize());
-  data()[position] = unit.player() + 1;
+  auto const byte = position >> 3;
+  auto const bit = position & 7;
+  data()[byte] |= 1 << bit;
 }
 
 void LifeProcessorImpl::processLife(bool compute)
@@ -27,13 +29,13 @@ void LifeProcessorImpl::processLife(bool compute)
 
 void LifeProcessorImpl::prepareLifeUnits()
 {
-  using VecType = uint64_t;
+  using Chunk = uint64_t;
 
   life_units_.clear();
 
-  Q_ASSERT(static_cast<VecType>(fieldSize()) % sizeof(VecType) == 0);
-  auto const* begin = reinterpret_cast<VecType const*>(data());
-  auto const* end   = reinterpret_cast<VecType const*>(data() + fieldSize());
+  Q_ASSERT(static_cast<Chunk>(fieldSize()) % sizeof(Chunk) == 0);
+  auto const* begin = reinterpret_cast<Chunk const*>(data());
+  auto const* end   = reinterpret_cast<Chunk const*>(data() + (fieldSize() >> 3));
   for (auto const* iter = begin; iter != end; ++iter)
   {
     auto const bytes = *iter;
@@ -41,16 +43,24 @@ void LifeProcessorImpl::prepareLifeUnits()
     {
       continue;
     }
-    auto const index = static_cast<VecType>(iter - begin) * sizeof(VecType);
-    for (VecType byte = 0; byte < sizeof(VecType); ++byte)
+    auto const offset = static_cast<Chunk>(iter - begin) * sizeof(Chunk);
+    for (Chunk byte = 0; byte < sizeof(Chunk); ++byte)
     {
-      auto const life = bytes >> (byte * 8) & static_cast<VecType>(0xFF);
-      if (life != 0)
+      auto const bits = bytes >> (byte * 8) & static_cast<Chunk>(0xFF);
+      if (bits == 0)
       {
-        auto const idx = index + byte;
-        auto const x = static_cast<uint16_t>(idx % field_size_.x());
-        auto const y = static_cast<uint16_t>(idx / field_size_.y());
-        life_units_.emplace_back(LifeUnit(x, y));
+        continue;
+      }
+      for (Chunk bit = 0; bit < 8; ++bit)
+      {
+        auto const life = bits & (1 << bit);
+        if (life != 0)
+        {
+          auto const idx = (offset + byte) * 8 + bit;
+          auto const x = static_cast<uint16_t>(idx % cols());
+          auto const y = static_cast<uint16_t>(idx / rows());
+          life_units_.emplace_back(LifeUnit(x, y));
+        }
       }
     }
   }

@@ -2,6 +2,7 @@
 
 #include <QPainter>
 #include <QQuickWindow>
+#include <QRandomGenerator>
 
 #include "../Utilities/qtutilities.h"
 #include "gameview.h"
@@ -15,18 +16,26 @@ constexpr auto const c_pixels_per_cell = QPointF(10.0, 10.0);
 constexpr auto const c_life_pixels_ratio = 0.3;
 constexpr auto const c_max_cells_in_screen = 1024;
 constexpr auto const c_min_cells_in_screen = 8;
+constexpr auto const c_scale_to_hide_grid = 0.2;
 
-QColor playerColor(Logic::PlayerId player)
+constexpr Qt::GlobalColor c_colors[]
 {
-  switch (player)
-  {
-  case 0: return Qt::GlobalColor::red;
-  case 1: return Qt::GlobalColor::blue;
-  case 2: return Qt::GlobalColor::green;
-  case 3:
-  default: return Qt::GlobalColor::cyan;
-  }
-}
+  Qt::GlobalColor::red,
+  Qt::GlobalColor::blue,
+  Qt::GlobalColor::cyan,
+  Qt::GlobalColor::gray,
+  Qt::GlobalColor::green,
+  Qt::GlobalColor::magenta,
+  Qt::GlobalColor::darkRed,
+  Qt::GlobalColor::darkBlue,
+  Qt::GlobalColor::darkCyan,
+  Qt::GlobalColor::darkBlue,
+  Qt::GlobalColor::darkGray,
+  Qt::GlobalColor::darkGreen,
+  Qt::GlobalColor::darkYellow,
+  Qt::GlobalColor::darkMagenta,
+  Qt::GlobalColor::lightGray,
+};
 
 } // namespace
 
@@ -55,6 +64,9 @@ QPoint GameView::fieldCells() const
 void GameView::initialize(Logic::GameModelPtr game_model)
 {
   game_model_ = game_model;
+  Q_ASSERT(QRandomGenerator::global() != nullptr);
+  auto const idx = QRandomGenerator::global()->generate() % (std::end(c_colors) - std::begin(c_colors));
+  color_ = c_colors[idx];
 }
 
 void GameView::setCurrentPattern(QVariant const& pattern_model)
@@ -83,6 +95,15 @@ void GameView::paint(QPainter* painter_ptr)
   drawSelectedCell(painter);
   painter.restore();
 
+  auto const normalized_scale = Utilities::Qt::normalized(field_scale_, minScale(), maxScale());
+  if (normalized_scale < c_scale_to_hide_grid)
+  {
+    return;
+  }
+  else if (normalized_scale < 1.0)
+  {
+    painter.setOpacity(normalized_scale);
+  }
   drawGrid(painter);
   drawCoordinates(painter);
 }
@@ -107,11 +128,11 @@ QVariant GameView::patternModelAt(int idx) const
 void GameView::pressed(QPointF point)
 {
   point = loopPos(point - field_offset_);
-  QPoint cell(point.x() / pixelsPerCell().x(),
-              point.y() / pixelsPerCell().y());
+  QPoint cell(static_cast<int>(point.x() / pixelsPerCell().x()),
+              static_cast<int>(point.y() / pixelsPerCell().y()));
 
-  pattern_trs_.first = true;
-  auto& trs = pattern_trs_.second;
+  pattern_trs_ = QMatrix();
+  auto& trs = *pattern_trs_;
   QMatrix tmp;
   tmp.translate(cell.x() - trs.dx(), cell.y() - trs.dy());
   trs *= tmp;
@@ -120,12 +141,11 @@ void GameView::pressed(QPointF point)
 
 void GameView::rotatePattern(qreal angle)
 {
-  if (!pattern_trs_.first)
+  if (!pattern_trs_)
   {
     return;
   }
-  auto& trs = pattern_trs_.second;
-  trs.rotate(angle);
+  pattern_trs_->rotate(angle);
   update();
 }
 
@@ -155,13 +175,13 @@ void GameView::selectPattern()
     Logic::Points const points_ { QPoint() };
   };
 
-  Q_ASSERT(pattern_trs_.first);
+  Q_ASSERT(pattern_trs_);
   if (current_pattern_ == nullptr)
   {
     current_pattern_ = Utilities::Qt::makeShared<SingleCell>();
   }
-  emit patternSelected(qMakePair(current_pattern_, std::move(pattern_trs_.second)));
-  pattern_trs_ = qMakePair(false, QMatrix());
+  emit patternSelected(qMakePair(current_pattern_, std::move(*pattern_trs_)));
+  pattern_trs_.reset();
   current_pattern_ = nullptr;
   update();
 }
@@ -228,22 +248,22 @@ void GameView::drawLifeCells(QPainter& painter) const
   painter.setBrush(QBrush(Qt::GlobalColor::white));
   for (auto const unit : game_model_->lifeUnits())
   {
-    painter.setPen(playerColor(unit.player()));
+    painter.setPen(color_);
     drawFilledCircle(painter, QPoint(unit.x(), unit.y()));
   }
 }
 
 void GameView::drawSelectedCell(QPainter& painter) const
 {
-  if (!pattern_trs_.first)
+  if (!pattern_trs_)
   {
     return;
   }
-  auto const& trs = pattern_trs_.second;
+  auto const& trs = *pattern_trs_;
 
   if (current_pattern_ == nullptr)
   {
-    auto const cell = QPoint(trs.dx(), trs.dy());
+    auto const cell = QPoint(static_cast<int>(trs.dx()), static_cast<int>(trs.dy()));
     auto const size = QSizeF(pixelsPerCell().x(), pixelsPerCell().y());
     QRectF rect(cellToPixels(cell), size);
     painter.fillRect(rect, QBrush(c_pattern_selection_color));
@@ -309,7 +329,8 @@ QPointF GameView::fieldSize() const
 
 QPoint GameView::cellsOnTheScreen() const
 {
-  return QPoint(size().width() / pixelsPerCell().x(), size().height() / pixelsPerCell().y());
+  return QPoint(static_cast<int>(size().width() / pixelsPerCell().x()),
+                static_cast<int>(size().height() / pixelsPerCell().y()));
 }
 
 QPointF GameView::cellOffset() const

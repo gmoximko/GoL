@@ -85,7 +85,7 @@ signals:
   bool stop();
 
 private:
-  using MaybeTRS = QPair<bool, QMatrix>;
+  using MaybeTRS = std::optional<QMatrix>;
   void drawGrid(QPainter& painter) const;
   void drawLifeCells(QPainter& painter) const;
   void drawSelectedCell(QPainter& painter) const;
@@ -107,6 +107,7 @@ private:
   Logic::PatternPtr current_pattern_;
   Logic::GameModelPtr game_model_;
   Logic::Score scores_ = 0;
+  Qt::GlobalColor color_ = Qt::GlobalColor::red;
 };
 using GameViewPtr = QPointer<GameView>;
 

@@ -42,7 +42,7 @@ Column {
     id: fieldSize
     clip: true
     currentIndex: 1
-    model: [512, 1024, 2048, 4096, 8192]
+    model: [512, 1024, 2048, 4096, 8192, 16384, 32768]
 
     onCurrentTextChanged: {
       params.fieldSize = Qt.point(currentText, currentText)

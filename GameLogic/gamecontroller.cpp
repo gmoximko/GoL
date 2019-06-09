@@ -26,7 +26,7 @@ public:
     {
       auto const position = loopPos(unit * trs, cells_);
       processor.addUnit(LifeUnit(static_cast<uint16_t>(position.x()),
-                                 static_cast<uint16_t>(position.y()), player_));
+                                 static_cast<uint16_t>(position.y())));
     }
   }
 
