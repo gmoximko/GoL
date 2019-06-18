@@ -67,6 +67,7 @@ void GameView::initialize(Logic::GameModelPtr game_model)
   Q_ASSERT(QRandomGenerator::global() != nullptr);
   auto const idx = QRandomGenerator::global()->generate() % (std::end(c_colors) - std::begin(c_colors));
   color_ = c_colors[idx];
+  setRenderTarget(RenderTarget::FramebufferObject);
 }
 
 void GameView::setCurrentPattern(QVariant const& pattern_model)

@@ -62,8 +62,8 @@ public:
   }
 
 private:
-  uint16_t const x_ = 0;
-  uint16_t const y_ = 0;
+  uint16_t x_ = 0;
+  uint16_t y_ = 0;
 };
 static_assert(sizeof(LifeUnit) == sizeof(uint32_t), "sizeof(LifeUnit)");
 uint qHash(LifeUnit unit, uint seed);
