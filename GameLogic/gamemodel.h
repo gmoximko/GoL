@@ -37,6 +37,7 @@ class LifeUnit
   constexpr static uint32_t c_coordinate_mask = (1 << c_pow_of_two_max_field_dimension) - 1;
 
 public:
+  LifeUnit() = default;
   LifeUnit(uint16_t x, uint16_t y)
     : x_(x)
     , y_(y)
@@ -66,6 +67,7 @@ private:
   uint16_t y_ = 0;
 };
 static_assert(sizeof(LifeUnit) == sizeof(uint32_t), "sizeof(LifeUnit)");
+static_assert(std::is_trivially_copyable_v<LifeUnit>, "");
 uint qHash(LifeUnit unit, uint seed);
 using LifeUnits = std::vector<LifeUnit>;
 

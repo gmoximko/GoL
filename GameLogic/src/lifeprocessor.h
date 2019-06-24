@@ -1,6 +1,8 @@
 #ifndef LIFEPROCESSOR_H
 #define LIFEPROCESSOR_H
 
+#include <QThreadPool>
+
 #include "../gamemodel.h"
 
 namespace Logic {
@@ -8,11 +10,8 @@ namespace Logic {
 class LifeProcessorImpl : public LifeProcessor
 {
 public:
-  explicit LifeProcessorImpl(QPoint field_size)
-    : field_size_(field_size)
-  {
-    Q_ASSERT(fieldSize() % 8 == 0);
-  }
+  explicit LifeProcessorImpl(QPoint field_size);
+  ~LifeProcessorImpl() override;
 
 public: // LifeProcessor
   LifeUnits const& lifeUnits() const final
@@ -38,6 +37,12 @@ public:
   }
 
 protected:
+  QThreadPool& threadPool() const
+  {
+    auto* result = QThreadPool::globalInstance();
+    Q_ASSERT(result != nullptr);
+    return *result;
+  }
   virtual void processLife() = 0;
   virtual uint8_t* data() = 0;
 
@@ -46,6 +51,12 @@ private:
 
   QPoint const field_size_;
   LifeUnits life_units_;
+
+  template<typename Chunk>
+  class PostProcess;
+  using Chunk = uint64_t;
+  std::vector<PostProcess<Chunk>> post_processes_;
+  QAtomicInt active_post_processes_;
 };
 
 LifeProcessorPtr createGPULifeProcessor(QPoint field_size);

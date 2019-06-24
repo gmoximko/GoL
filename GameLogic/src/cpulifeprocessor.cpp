@@ -1,4 +1,3 @@
-#include <QThreadPool>
 #include <QDebug>
 #include <QTime>
 
@@ -11,13 +10,6 @@ namespace {
 using Buffer = std::vector<uint8_t>;
 using Point = QPoint;
 using Index = uint32_t;
-
-QThreadPool& threadPool()
-{
-  auto* result = QThreadPool::globalInstance();
-  Q_ASSERT(result != nullptr);
-  return *result;
-}
 
 template<uint32_t Bit>
 struct Mask
@@ -145,14 +137,12 @@ public:
     , output_(fieldSize() / 8)
     , computed_(1)
   {
-    qDebug() << "Active threads: " << threadPool().activeThreadCount()
-             << " Max threads: " << threadPool().maxThreadCount();
     auto const thread_count = threadPool().maxThreadCount();
-    auto const bit_count = fieldSize() / 8;
-    auto const chunk_size = bit_count / thread_count;
+    auto const byte_count = fieldSize() / 8;
+    auto const chunk_size = byte_count / thread_count;
     for (int idx = 0; idx < thread_count; ++idx)
     {
-      auto const remainder = idx + 1 < thread_count ? 0 : bit_count % thread_count;
+      auto const remainder = idx + 1 < thread_count ? 0 : byte_count % thread_count;
       auto const range = QPoint(chunk_size * idx, chunk_size * (idx + 1) + remainder);
       life_processes_.emplace_back(range, field_size, input_, output_, *this);
     }
@@ -212,7 +202,7 @@ public:
   void start()
   {
     ++processor_.active_life_processes_;
-    threadPool().start(this);
+    processor_.threadPool().start(this);
   }
   void run() override
   {
