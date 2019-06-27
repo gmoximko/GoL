@@ -1,6 +1,3 @@
-#include <QDebug>
-#include <QTime>
-
 #include "lifeprocessor.h"
 
 namespace Logic {
@@ -150,14 +147,11 @@ public:
   ~CPULifeProcessor() override
   {
     while (!computed());
+    qDebug() << "CPULifeProcessor min computaion duration " << min_computation_duration_;
   }
 
 public: // LifeProcessor
   bool computed() const override;
-  int computationDuration() const override
-  {
-    return last_computation_duration_;
-  }
 
 protected: // LifeProcessorImpl
   void processLife() override;
@@ -172,7 +166,7 @@ private:
     Q_ASSERT(!computed());
     Q_ASSERT(active_life_processes_ == 0);
     input_.swap(output_);
-    last_computation_duration_ = computation_duration_.elapsed();
+    min_computation_duration_ = std::min(min_computation_duration_, computation_duration_.elapsed());
     computed_.ref();
   }
 
@@ -181,7 +175,7 @@ private:
   std::vector<uint8_t> input_;
   std::vector<uint8_t> output_;
   QTime computation_duration_;
-  int last_computation_duration_ = 0;
+  int min_computation_duration_ = std::numeric_limits<int>::max();
   QAtomicInt active_life_processes_;
   QAtomicInt computed_;
 };

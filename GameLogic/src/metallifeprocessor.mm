@@ -107,9 +107,9 @@ static NSString* const kernel_src =
 
 @interface MetalLifeProcessor : NSObject
 
-- (BOOL) computed;
+@property (atomic) BOOL computed;
 - (void*) content;
-- (CFTimeInterval) computationDuration;
+- (CFTimeInterval) minComputationDuration;
 - (void) processLife;
 
 @end
@@ -124,13 +124,7 @@ static NSString* const kernel_src =
   MTLSize field_size_;
   MTLSize threads_per_group_;
 
-  BOOL computed_;
-  CFTimeInterval computation_duration_;
-}
-
-- (BOOL) computed
-{
-  return computed_;
+  CFTimeInterval min_computation_duration_;
 }
 
 - (void*) content
@@ -138,9 +132,9 @@ static NSString* const kernel_src =
   return [input_ contents];
 }
 
-- (CFTimeInterval) computationDuration
+- (CFTimeInterval) minComputationDuration
 {
-  return computation_duration_;
+  return min_computation_duration_;
 }
 
 - (id) initWithWidth: (NSUInteger)width Height: (NSUInteger)height
@@ -148,8 +142,8 @@ static NSString* const kernel_src =
   self = [super init];
   assert(self);
 
-  computed_ = YES;
-  computation_duration_ = 0;
+  [self setComputed: YES];
+  min_computation_duration_ = DBL_MAX;
 
   NSError* error = nil;
   id<MTLDevice> device = MTLCreateSystemDefaultDevice();
@@ -203,11 +197,11 @@ static NSString* const kernel_src =
 
 - (void) processLife
 {
-  if (!computed_)
+  if (![self computed])
   {
     return;
   }
-  computed_ = NO;
+  [self setComputed: NO];
   NSDate *start = [NSDate date];
 
   id<MTLCommandBuffer> command_buffer = [command_queue_ commandBuffer];
@@ -223,19 +217,18 @@ static NSString* const kernel_src =
   [command_buffer addCompletedHandler: ^(id<MTLCommandBuffer> cb)
   {
     assert([[cb error] code] == 0);
-    [self handleComputeCompletion];
-    computation_duration_ = -[start timeIntervalSinceNow];
+    [self handleComputeCompletion: -[start timeIntervalSinceNow]];
   }];
   [command_buffer commit];
 }
 
-- (void) handleComputeCompletion
+- (void) handleComputeCompletion: (NSTimeInterval)timeIntervalSinceNow
 {
-  computed_ = YES;
-
   id<MTLBuffer> tmp = input_;
   input_ = output_;
   output_ = tmp;
+  min_computation_duration_ = MIN(min_computation_duration_, timeIntervalSinceNow);
+  [self setComputed: YES];
 }
 
 @end
@@ -262,16 +255,13 @@ public:
   ~GPULifeProcessor() override
   {
     while (!computed());
+    qDebug() << "~MetalLifeProcessor min computaion duration " << [self_ minComputationDuration] * 1000;
   }
 
 public: // LifeProcessor
   bool computed() const override
   {
     return [self_ computed];
-  }
-  int computationDuration() const override
-  {
-    return static_cast<int>([self_ computationDuration] * 1000);
   }
 
 protected: // LifeProcessorImpl

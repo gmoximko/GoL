@@ -1,7 +1,6 @@
 #include <cmath>
 
 #include <QTimerEvent>
-#include <QDebug>
 
 #include "gamecontroller.h"
 
@@ -51,11 +50,7 @@ GameController::GameController(QObject* parent, Params const& params)
   Q_ASSERT(game_model_ != nullptr);
 }
 
-GameController::~GameController()
-{
-  qDebug() << "~GameController() Average computation duration: "
-           << average_computation_duration_ / static_cast<qreal>(step_);
-}
+GameController::~GameController() = default;
 
 bool GameController::addPattern(PatternTrs pattern_trs)
 {
@@ -113,21 +108,10 @@ void GameController::applyCommands()
 
 void GameController::updateStep()
 {
-  if (stopped_)
+  if (!stopped_)
   {
-    return;
+    ++step_;
   }
-
-  auto const& life_processor = game_model_->lifeProcessor();
-  auto const duration = life_processor.computationDuration();
-  Q_ASSERT(duration >= 0);
-  average_computation_duration_ += static_cast<decltype(average_computation_duration_)>(duration);
-
-//  auto const current_life = life_processor.lifeUnits().size();
-//  auto const cells = game_model_->cells();
-//  auto const field_size = cells.x() * cells.y();
-//  scores_ += std::ceil(score_addition_ * (current_life / static_cast<qreal>(field_size)));
-  ++step_;
 }
 
 } // Logic

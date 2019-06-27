@@ -76,7 +76,6 @@ struct LifeProcessor
   virtual ~LifeProcessor() = default;
   virtual LifeUnits const& lifeUnits() const = 0;
   virtual bool computed() const = 0;
-  virtual int computationDuration() const = 0;
 
   virtual void addUnit(LifeUnit unit) = 0;
   virtual void processLife(bool compute) = 0;

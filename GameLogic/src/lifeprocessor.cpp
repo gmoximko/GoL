@@ -82,11 +82,15 @@ LifeProcessorImpl::LifeProcessorImpl(QPoint field_size)
   for (int idx = 0; idx < thread_count; ++idx)
   {
     auto const remainder = idx + 1 < thread_count ? 0 : chunk_size % thread_count;
-    post_processes_.emplace_back(QPoint(chunk_size * idx, chunk_size * (idx + 1) + remainder), *this);
+    auto const range = QPoint(chunk_size * idx, chunk_size * (idx + 1) + remainder);
+    post_processes_.emplace_back(range, *this);
   }
 }
 
-LifeProcessorImpl::~LifeProcessorImpl() = default;
+LifeProcessorImpl::~LifeProcessorImpl()
+{
+  qDebug() << "LifeProcessor min post process duration " << min_post_process_duration_;
+}
 
 void LifeProcessorImpl::addUnit(LifeUnit unit)
 {
@@ -114,6 +118,7 @@ void LifeProcessorImpl::processLife(bool compute)
 void LifeProcessorImpl::prepareLifeUnits()
 {
   Q_ASSERT(active_post_processes_ == 0);
+  post_process_duration_.start();
   life_units_.clear();
   for (auto& post_process : post_processes_)
   {
@@ -134,6 +139,7 @@ void LifeProcessorImpl::prepareLifeUnits()
     std::memcpy(life_units_.data() + units, chunk_units.data(), chunk_units.size() * sizeof(LifeUnit));
     units += chunk_units.size();
   }
+  min_post_process_duration_ = std::min(min_post_process_duration_, post_process_duration_.elapsed());
   Q_ASSERT(units == life_units_.size());
 }
 
