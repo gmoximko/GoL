@@ -21,12 +21,16 @@ public:
     auto const& pattern = pattern_trs_.first;
     auto const& trs = pattern_trs_.second;
     Q_ASSERT(pattern != nullptr);
+    LifeUnits units;
+    units.reserve(pattern->points().size());
     for (auto const& unit : pattern->points())
     {
       auto const position = loopPos(unit * trs, cells_);
-      processor.addUnit(LifeUnit(static_cast<uint16_t>(position.x()),
-                                 static_cast<uint16_t>(position.y())));
+      units.push_back(LifeUnit(static_cast<uint16_t>(position.x()),
+                               static_cast<uint16_t>(position.y())));
     }
+    Q_ASSERT(!units.empty());
+    processor.addUnits(std::move(units));
   }
 
 private:

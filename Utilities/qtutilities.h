@@ -65,6 +65,17 @@ T clamp(T value, T min, T max)
   return value;
 }
 
+class ThreadChecker
+{
+public:
+  explicit ThreadChecker(QThread* thread = nullptr);
+  void check() const;
+  void check();
+
+private:
+  QThread* thread_ = nullptr;
+};
+
 }} // Utilities::Qt
 
 inline uint qHash(QPoint const& point, uint seed)

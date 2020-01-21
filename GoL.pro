@@ -16,6 +16,7 @@ DEFINES += QT_DEPRECATED_WARNINGS
 SOURCES += main.cpp \
     GameView/gameview.cpp \
     GameView/mainwindow.cpp \
+    Utilities/qtutilities.cpp \
     Utilities/rleparser.cpp \
     GameLogic/gamemodel.cpp \
     GameLogic/src/cpulifeprocessor.cpp \

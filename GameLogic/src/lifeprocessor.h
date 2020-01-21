@@ -5,11 +5,12 @@
 #include <QDebug>
 #include <QTime>
 
+#include "../../Utilities/qtutilities.h"
 #include "../gamemodel.h"
 
 namespace Logic {
 
-class LifeProcessorImpl : public LifeProcessor
+class LifeProcessorImpl : public LifeProcessor, QThread
 {
 public:
   explicit LifeProcessorImpl(QPoint field_size);
@@ -21,7 +22,9 @@ public: // LifeProcessor
     return life_units_;
   }
 
-  void addUnit(LifeUnit unit) final;
+  void init() final;
+  void destroy() final;
+  void addUnits(LifeUnits units) final;
   void processLife(bool compute) final;
 
 public:
@@ -45,23 +48,36 @@ protected:
     Q_ASSERT(result != nullptr);
     return *result;
   }
+  Utilities::Qt::ThreadChecker const& mainThread() const { return main_thread_; }
+  Utilities::Qt::ThreadChecker const& computeThread() const { return compute_thread_; }
 
+  virtual void onInit() {}
+  virtual void onDestroy() {}
   virtual void processLife() = 0;
   virtual uint8_t* data() = 0;
 
+private: // QThread
+  void run() final;
+
 private:
-  void prepareLifeUnits();
-
-  QPoint const field_size_;
-  LifeUnits life_units_;
-
   template<typename Chunk>
   class PostProcess;
   using Chunk = uint64_t;
-  std::vector<PostProcess<Chunk>> post_processes_;
+
+  void prepareLifeUnits(std::vector<PostProcess<Chunk>> const& post_processes);
+  void startAndWaitPostProcesses(std::vector<PostProcess<Chunk>>& post_processes);
+  void updateData();
+
+  QPoint const field_size_;
+  LifeUnits life_units_;
+  LifeUnits next_life_units_;
   QAtomicInt active_post_processes_;
-  QTime post_process_duration_;
-  int min_post_process_duration_ = std::numeric_limits<int>::max();
+  QAtomicInt post_processed_;
+  QAtomicInt exit_;
+  QMutex mutex_;
+  LifeUnits input_;
+  Utilities::Qt::ThreadChecker main_thread_;
+  Utilities::Qt::ThreadChecker compute_thread_{this};
 };
 
 LifeProcessorPtr createGPULifeProcessor(QPoint field_size);

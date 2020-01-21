@@ -77,7 +77,9 @@ struct LifeProcessor
   virtual LifeUnits const& lifeUnits() const = 0;
   virtual bool computed() const = 0;
 
-  virtual void addUnit(LifeUnit unit) = 0;
+  virtual void init() = 0;
+  virtual void destroy() = 0;
+  virtual void addUnits(LifeUnits units) = 0;
   virtual void processLife(bool compute) = 0;
 };
 using LifeProcessorPtr = std::unique_ptr<LifeProcessor>;

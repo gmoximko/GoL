@@ -23,7 +23,6 @@ public:
   void start()
   {
     ++processor_.active_post_processes_;
-    chunk_units_.clear();
     processor_.threadPool().start(this);
   }
   void run() override
@@ -32,6 +31,7 @@ public:
     auto const begin = data + range_.x();
     auto const end   = data + range_.y();
 
+    chunk_units_.clear();
     for (auto const* iter = begin; iter != end; ++iter)
     {
       auto const bytes = *iter;
@@ -71,11 +71,58 @@ private:
 
 LifeProcessorImpl::LifeProcessorImpl(QPoint field_size)
   : field_size_(field_size)
+  , main_thread_(QThread::currentThread())
+{}
+
+LifeProcessorImpl::~LifeProcessorImpl()
 {
+  mainThread().check();
+  qDebug() << "LifeProcessor min post process duration ";
+}
+
+void LifeProcessorImpl::init()
+{
+  mainThread().check();
+  onInit();
+  start();
+}
+
+void LifeProcessorImpl::destroy()
+{
+  mainThread().check();
+  onDestroy();
+  exit_.ref();
+  quit();
+  wait();
+}
+
+void LifeProcessorImpl::addUnits(LifeUnits units)
+{
+  mainThread().check();
+  life_units_.insert(life_units_.end(), units.cbegin(), units.cend());
+  QMutexLocker locker(&mutex_);
+  input_ = std::move(units);
+}
+
+void LifeProcessorImpl::processLife(bool compute)
+{
+  mainThread().check();
+  if (compute && post_processed_)
+  {
+    life_units_.swap(next_life_units_);
+    post_processed_.deref();
+  }
+}
+
+void LifeProcessorImpl::run()
+{
+  computeThread().check();
+
   Q_ASSERT(fieldSize() % 8 == 0);
   Q_ASSERT(fieldSize() / 8 % sizeof(Chunk) == 0);
-
   qDebug() << "Max threads: " << threadPool().maxThreadCount();
+
+  std::vector<PostProcess<Chunk>> post_processes;
   auto const thread_count = threadPool().maxThreadCount();
   auto const chunks = fieldSize() / 8 / sizeof(Chunk);
   auto const chunk_size = chunks / thread_count;
@@ -83,77 +130,85 @@ LifeProcessorImpl::LifeProcessorImpl(QPoint field_size)
   {
     auto const remainder = idx + 1 < thread_count ? 0 : chunk_size % thread_count;
     auto const range = QPoint(chunk_size * idx, chunk_size * (idx + 1) + remainder);
-    post_processes_.emplace_back(range, *this);
+    post_processes.emplace_back(range, *this);
   }
-}
 
-LifeProcessorImpl::~LifeProcessorImpl()
-{
-  qDebug() << "LifeProcessor min post process duration " << min_post_process_duration_;
-}
-
-void LifeProcessorImpl::addUnit(LifeUnit unit)
-{
-  auto const position = unit.x() + unit.y() * rows();
-  Q_ASSERT(computed());
-  Q_ASSERT(position < fieldSize());
-  auto const byte = position >> 3;
-  auto const bit = position & 7;
-  data()[byte] |= 1 << bit;
-}
-
-void LifeProcessorImpl::processLife(bool compute)
-{
-  if (!computed())
+  for (; !exit_;)
   {
-    return;
-  }
-  prepareLifeUnits();
-  if (compute)
-  {
-    processLife();
+    if (!post_processed_ && computed())
+    {
+      startAndWaitPostProcesses(post_processes);
+      prepareLifeUnits(post_processes);
+      post_processed_.ref();
+      updateData();
+      processLife();
+    }
   }
 }
 
-void LifeProcessorImpl::prepareLifeUnits()
+void LifeProcessorImpl::prepareLifeUnits(std::vector<PostProcess<Chunk>> const& post_processes)
 {
-  Q_ASSERT(active_post_processes_ == 0);
-  post_process_duration_.start();
-  life_units_.clear();
-  for (auto& post_process : post_processes_)
-  {
-    post_process.start();
-  }
-  while (active_post_processes_ != 0);
-
-  life_units_.resize(std::accumulate(post_processes_.cbegin(), post_processes_.cend(), SizeT(0),
+  computeThread().check();
+  next_life_units_.clear();
+  next_life_units_.resize(std::accumulate(post_processes.cbegin(), post_processes.cend(), SizeT(0),
     [](SizeT init, auto const& post_process)
     {
       return init + post_process.chunkUnits().size();
     }));
 
   SizeT units = 0;
-  for (auto const& post_process : post_processes_)
+  for (auto const& post_process : post_processes)
   {
     auto const& chunk_units = post_process.chunkUnits();
-    std::memcpy(life_units_.data() + units, chunk_units.data(), chunk_units.size() * sizeof(LifeUnit));
+    std::memcpy(next_life_units_.data() + units,
+                chunk_units.data(),
+                chunk_units.size() * sizeof(LifeUnit));
     units += chunk_units.size();
   }
-  min_post_process_duration_ = std::min(min_post_process_duration_, post_process_duration_.elapsed());
-  Q_ASSERT(units == life_units_.size());
+  Q_ASSERT(units == next_life_units_.size());
+}
+
+void LifeProcessorImpl::startAndWaitPostProcesses(std::vector<PostProcess<Chunk>>& post_processes)
+{
+  computeThread().check();
+  Q_ASSERT(active_post_processes_ == 0);
+  for (auto& post_process : post_processes)
+  {
+    post_process.start();
+  }
+  while (active_post_processes_ != 0);
+}
+
+void LifeProcessorImpl::updateData()
+{
+  computeThread().check();
+  QMutexLocker locker(&mutex_);
+  for (auto const unit : input_)
+  {
+    auto const position = unit.x() + unit.y() * rows();
+    Q_ASSERT(position < fieldSize());
+    auto const byte = position >> 3;
+    auto const bit = position & 7;
+    data()[byte] |= 1 << bit;
+  }
+  input_.clear();
 }
 
 LifeProcessorPtr createLifeProcessor(QPoint field_size)
 {
+  LifeProcessorPtr result;
   try
   {
-    return createGPULifeProcessor(field_size);
+    result = createGPULifeProcessor(field_size);
   }
-  catch(std::exception const& e)
+  catch (std::exception const& e)
   {
     qDebug() << "Impossible to create GPULifeProcessor! " << e.what();
-    return createCPULifeProcessor(field_size);
+    result = createCPULifeProcessor(field_size);
   }
+  Q_ASSERT(result != nullptr);
+  result->init();
+  return result;
 }
 
 } // Logic

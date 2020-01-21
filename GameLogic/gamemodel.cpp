@@ -43,6 +43,7 @@ public:
   }
   ~GameModelImpl() override
   {
+    life_processor_->destroy();
     qDebug() << "~GameModel()";
   }
 
@@ -60,15 +61,6 @@ public:
   }
   LifeUnits const& lifeUnits() const override
   {
-    Q_ASSERT(([&life_units = life_processor_->lifeUnits()]() -> bool
-    {
-      QSet<QPoint> unique_pos;
-      for (auto const unit : life_units)
-      {
-        unique_pos.insert(QPoint(static_cast<int>(unit.x()), static_cast<int>(unit.y())));
-      }
-      return static_cast<size_t>(unique_pos.size()) == life_units.size();
-    })());
     return life_processor_->lifeUnits();
   }
 
