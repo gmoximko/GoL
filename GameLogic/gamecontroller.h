@@ -24,7 +24,7 @@ public:
   ~GameController() override;
 
 public slots:
-  bool addPattern(PatternTrs pattern_trs);
+  void addPattern(PatternTrs pattern_trs);
   bool onStop();
 
 signals:
@@ -34,19 +34,15 @@ protected:
   void timerEvent(QTimerEvent* event) override;
 
 private:
-  class Command;
   using StepId = uint64_t;
 
   void makeStep();
-  void applyCommands();
-  void updateStep();
 
   int const step_timer_id_ = 0;
   PlayerId const player_ = 0;
   Score const score_addition_ = 0;
 
   GameModelMutablePtr game_model_;
-  std::vector<Command> commands_;
   StepId step_ = 0;
   Score const scores_ = 0;
   bool stopped_ = false;

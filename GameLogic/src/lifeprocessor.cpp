@@ -101,16 +101,19 @@ void LifeProcessorImpl::addUnits(LifeUnits units)
   mainThread().check();
   life_units_.insert(life_units_.end(), units.cbegin(), units.cend());
   QMutexLocker locker(&mutex_);
-  input_ = std::move(units);
+  input_.insert(input_.end(), units.cbegin(), units.cend());
 }
 
 void LifeProcessorImpl::processLife(bool compute)
 {
   mainThread().check();
-  if (compute && post_processed_)
+  if (post_processed_)
   {
-    life_units_.swap(next_life_units_);
-    post_processed_.deref();
+    if (compute)
+    {
+      life_units_.swap(next_life_units_);
+      post_processed_.deref();
+    }
   }
 }
 
@@ -182,6 +185,7 @@ void LifeProcessorImpl::startAndWaitPostProcesses(std::vector<PostProcess<Chunk>
 void LifeProcessorImpl::updateData()
 {
   computeThread().check();
+  Q_ASSERT(computed());
   QMutexLocker locker(&mutex_);
   for (auto const unit : input_)
   {

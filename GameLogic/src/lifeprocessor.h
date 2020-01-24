@@ -51,6 +51,8 @@ protected:
   Utilities::Qt::ThreadChecker const& mainThread() const { return main_thread_; }
   Utilities::Qt::ThreadChecker const& computeThread() const { return compute_thread_; }
 
+  virtual bool computed() const = 0;
+
   virtual void onInit() {}
   virtual void onDestroy() {}
   virtual void processLife() = 0;

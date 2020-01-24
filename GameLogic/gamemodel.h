@@ -75,7 +75,6 @@ struct LifeProcessor
 {
   virtual ~LifeProcessor() = default;
   virtual LifeUnits const& lifeUnits() const = 0;
-  virtual bool computed() const = 0;
 
   virtual void init() = 0;
   virtual void destroy() = 0;

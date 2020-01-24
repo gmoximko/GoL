@@ -6,40 +6,6 @@
 
 namespace Logic {
 
-class GameController::Command
-{
-public:
-  explicit Command(StepId step, PatternTrs pattern_trs, QPoint cells, PlayerId player)
-    : step_(step)
-    , player_(player)
-    , pattern_trs_(std::move(pattern_trs))
-    , cells_(cells)
-  {}
-
-  void apply(LifeProcessor& processor) const
-  {
-    auto const& pattern = pattern_trs_.first;
-    auto const& trs = pattern_trs_.second;
-    Q_ASSERT(pattern != nullptr);
-    LifeUnits units;
-    units.reserve(pattern->points().size());
-    for (auto const& unit : pattern->points())
-    {
-      auto const position = loopPos(unit * trs, cells_);
-      units.push_back(LifeUnit(static_cast<uint16_t>(position.x()),
-                               static_cast<uint16_t>(position.y())));
-    }
-    Q_ASSERT(!units.empty());
-    processor.addUnits(std::move(units));
-  }
-
-private:
-  StepId const step_ = 0;
-  PlayerId const player_ = 0;
-  PatternTrs const pattern_trs_;
-  QPoint const cells_;
-};
-
 GameController::GameController(QObject* parent, Params const& params)
   : QObject(parent)
   , step_timer_id_(startTimer(params.update_time_, Qt::TimerType::PreciseTimer))
@@ -56,20 +22,21 @@ GameController::GameController(QObject* parent, Params const& params)
 
 GameController::~GameController() = default;
 
-bool GameController::addPattern(PatternTrs pattern_trs)
+void GameController::addPattern(PatternTrs pattern_trs)
 {
-  auto const pattern_scores = pattern_trs.first->scores();
-  auto const result = pattern_scores <= scores_;
-  if (result)
+  auto const& pattern = pattern_trs.first;
+  auto const& trs = pattern_trs.second;
+  Q_ASSERT(pattern != nullptr);
+  LifeUnits units;
+  units.reserve(pattern->points().size());
+  for (auto const& unit : pattern->points())
   {
-//    scores_ -= pattern_scores;
-    commands_.emplace_back(step_, std::move(pattern_trs), game_model_->cells(), player_);
-    if (game_model_->lifeProcessor().computed())
-    {
-      applyCommands();
-    }
+    auto const position = loopPos(unit * trs, game_model_->cells());
+    units.push_back(LifeUnit(static_cast<uint16_t>(position.x()),
+                             static_cast<uint16_t>(position.y())));
   }
-  return result;
+  Q_ASSERT(!units.empty());
+  game_model_->lifeProcessor().addUnits(std::move(units));
 }
 
 bool GameController::onStop()
@@ -88,34 +55,8 @@ void GameController::timerEvent(QTimerEvent* event)
 
 void GameController::makeStep()
 {
-  auto& life_processor = game_model_->lifeProcessor();
-  if (!life_processor.computed())
-  {
-    return;
-  }
-  applyCommands();
-  life_processor.processLife(!stopped_);
-  updateStep();
+  game_model_->lifeProcessor().processLife(!stopped_);
   emit stepMade(scores_);
-}
-
-void GameController::applyCommands()
-{
-  auto& life_processor = game_model_->lifeProcessor();
-  Q_ASSERT(life_processor.computed());
-  for (auto const& command : commands_)
-  {
-    command.apply(life_processor);
-  }
-  commands_.clear();
-}
-
-void GameController::updateStep()
-{
-  if (!stopped_)
-  {
-    ++step_;
-  }
 }
 
 } // Logic

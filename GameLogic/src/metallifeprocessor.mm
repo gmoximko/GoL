@@ -189,10 +189,7 @@ protected: // LifeProcessorImpl
   void processLife() override
   {
     computeThread().check();
-    if (!computed())
-    {
-      return;
-    }
+    Q_ASSERT(computed());
     computed_.deref();
     Q_ASSERT(!computed());
 
