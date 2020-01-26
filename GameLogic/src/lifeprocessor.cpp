@@ -121,13 +121,13 @@ void LifeProcessorImpl::run()
 {
   computeThread().check();
 
-  Q_ASSERT(fieldSize() % 8 == 0);
-  Q_ASSERT(fieldSize() / 8 % sizeof(Chunk) == 0);
+  Q_ASSERT(fieldLength() % 8 == 0);
+  Q_ASSERT(fieldLength() / 8 % sizeof(Chunk) == 0);
   qDebug() << "Max threads: " << threadPool().maxThreadCount();
 
   std::vector<PostProcess<Chunk>> post_processes;
   auto const thread_count = threadPool().maxThreadCount();
-  auto const chunks = fieldSize() / 8 / sizeof(Chunk);
+  auto const chunks = fieldLength() / 8 / sizeof(Chunk);
   auto const chunk_size = chunks / thread_count;
   for (int idx = 0; idx < thread_count; ++idx)
   {
@@ -190,7 +190,7 @@ void LifeProcessorImpl::updateData()
   for (auto const unit : input_)
   {
     auto const position = unit.x() + unit.y() * rows();
-    Q_ASSERT(position < fieldSize());
+    Q_ASSERT(position < fieldLength());
     auto const byte = position >> 3;
     auto const bit = position & 7;
     data()[byte] |= 1 << bit;

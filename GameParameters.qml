@@ -52,7 +52,7 @@ Column {
     id: gameSpeed
     clip: true
     currentIndex: 2
-    model: [30, 50, 100, 150, 1000]
+    model: [1, 10, 30, 50, 100, 150, 1000]
 
     onCurrentTextChanged: {
       params.gameSpeed = Number(currentText)

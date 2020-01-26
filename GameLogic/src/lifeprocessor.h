@@ -28,7 +28,7 @@ public: // LifeProcessor
   void processLife(bool compute) final;
 
 public:
-  SizeT fieldSize() const
+  SizeT fieldLength() const
   {
     return rows() * cols();
   }

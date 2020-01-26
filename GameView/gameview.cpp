@@ -12,11 +12,11 @@ namespace View {
 namespace {
 
 constexpr auto const c_pattern_selection_color = Qt::GlobalColor::yellow;
-constexpr auto const c_pixels_per_cell = QPointF(10.0, 10.0);
+constexpr auto const c_pixels_per_cell = QPointF(3.0, 3.0);
 constexpr auto const c_life_pixels_ratio = 0.3;
-constexpr auto const c_max_cells_in_screen = 1024;
-constexpr auto const c_min_cells_in_screen = 8;
-constexpr auto const c_scale_to_hide_grid = 0.2;
+constexpr auto const c_max_cells_in_screen = 4096;
+constexpr auto const c_min_cells_in_screen = 128;
+constexpr auto const c_scale_to_hide_grid = 0.5;
 
 constexpr Qt::GlobalColor c_colors[]
 {
@@ -68,6 +68,7 @@ void GameView::initialize(Logic::GameModelPtr game_model)
   auto const idx = QRandomGenerator::global()->generate() % (std::end(c_colors) - std::begin(c_colors));
   color_ = c_colors[idx];
   setRenderTarget(RenderTarget::FramebufferObject);
+//  setPerformanceHints(QQuickPaintedItem::FastFBOResizing);
 }
 
 void GameView::setCurrentPattern(QVariant const& pattern_model)
@@ -86,7 +87,7 @@ void GameView::paint(QPainter* painter_ptr)
 {
   auto& painter = *painter_ptr;
   painter.setPen(Qt::GlobalColor::white);
-  painter.setRenderHint(QPainter::Antialiasing);
+//  painter.setRenderHint(QPainter::Antialiasing);
 
   painter.save();
   drawLifeCells(painter);
@@ -247,10 +248,10 @@ void GameView::drawGrid(QPainter& painter) const
 void GameView::drawLifeCells(QPainter& painter) const
 {
   painter.setBrush(QBrush(Qt::GlobalColor::white));
+  painter.setPen(color_);
   for (auto const unit : game_model_->lifeUnits())
   {
-    painter.setPen(color_);
-    drawFilledCircle(painter, QPoint(unit.x(), unit.y()));
+    drawUnit(painter, QPoint(unit.x(), unit.y()));
   }
 }
 
@@ -274,16 +275,20 @@ void GameView::drawSelectedCell(QPainter& painter) const
     painter.setPen(c_pattern_selection_color);
     for (auto const& point : current_pattern_->points())
     {
-      drawFilledCircle(painter, Logic::loopPos(point * trs, game_model_->cells()));
+      drawUnit(painter, Logic::loopPos(point * trs, game_model_->cells()));
     }
   }
 }
 
-void GameView::drawFilledCircle(QPainter& painter, QPoint cell) const
+void GameView::drawUnit(QPainter& painter, QPoint cell) const
 {
   auto const center = cellToPixels(cell) + pixelsPerCell() / 2.0;
-  auto const radius = pixelsPerCell() * c_life_pixels_ratio;
-  painter.drawEllipse(center, radius.x(), radius.y());
+//  auto const radius = pixelsPerCell() * c_life_pixels_ratio;
+//  painter.drawEllipse(center, radius.x(), radius.y());
+  if (boundingRect().contains(center))
+  {
+    painter.drawPoint(center);
+  }
 }
 
 void GameView::drawCoordinates(QPainter& painter) const

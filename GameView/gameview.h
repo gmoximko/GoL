@@ -89,7 +89,7 @@ private:
   void drawGrid(QPainter& painter) const;
   void drawLifeCells(QPainter& painter) const;
   void drawSelectedCell(QPainter& painter) const;
-  void drawFilledCircle(QPainter& painer, QPoint cell) const;
+  void drawUnit(QPainter& painer, QPoint cell) const;
   void drawCoordinates(QPainter& painter) const;
 
   QPointF fieldSize() const;

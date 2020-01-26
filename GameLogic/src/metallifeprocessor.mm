@@ -123,8 +123,8 @@ public:
       [NSException raise: NSGenericException format: @"Metal is not supported on this device"];
     }
 
-    NSUInteger width = field_size.x();
-    NSUInteger height = field_size.y();
+    NSUInteger width = cols();
+    NSUInteger height = rows();
     MTLCompileOptions* options = [MTLCompileOptions new];
     options.preprocessorMacros =
         @{
@@ -206,6 +206,7 @@ protected: // LifeProcessorImpl
     [command_buffer addCompletedHandler: ^(id<MTLCommandBuffer> cb)
     {
       Q_ASSERT([[cb error] code] == 0);
+//      qDebug() << "CFTimeInterval executionDuration " << (cb.GPUEndTime - cb.GPUStartTime);
       handleComputeCompletion();
     }];
     [command_buffer commit];

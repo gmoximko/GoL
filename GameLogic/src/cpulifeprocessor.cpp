@@ -130,12 +130,12 @@ class CPULifeProcessor final : public LifeProcessorImpl
 public:
   explicit CPULifeProcessor(QPoint field_size)
     : LifeProcessorImpl(field_size)
-    , input_(fieldSize() / 8)
-    , output_(fieldSize() / 8)
+    , input_(fieldLength() / 8)
+    , output_(fieldLength() / 8)
     , computed_(1)
   {
     auto const thread_count = threadPool().maxThreadCount();
-    auto const byte_count = fieldSize() / 8;
+    auto const byte_count = fieldLength() / 8;
     auto const chunk_size = byte_count / thread_count;
     for (int idx = 0; idx < thread_count; ++idx)
     {

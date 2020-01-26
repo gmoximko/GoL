@@ -59,3 +59,6 @@ else: unix|win32 {
     SOURCES += GameLogic/src/opencllifeprocessor.cpp
 }
 
+release {
+    DEFINES += NDEBUG
+}
