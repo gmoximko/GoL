@@ -68,6 +68,8 @@ QQuickItem* MainWindow::createGame(GameParams* game_params)
           game_controller_.data(), &Logic::GameController::onStop);
   connect(game_controller_.data(), &Logic::GameController::stepMade,
           game_view_.data(), &GameView::onStepMade);
+  connect(game_view_.data(), &GameView::gameSpeedChanged,
+          game_controller_.data(), &Logic::GameController::onGameSpeedChanged);
   suppressSignals(game_network_.data(), true);
   return game_window_.data();
 }

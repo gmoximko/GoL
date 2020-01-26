@@ -83,6 +83,7 @@ signals:
   void scoresChanged();
   void patternSelected(Logic::PatternTrs pattern_trs);
   bool stop();
+  Q_INVOKABLE void gameSpeedChanged(int update_time);
 
 private:
   using MaybeTRS = std::optional<QMatrix>;

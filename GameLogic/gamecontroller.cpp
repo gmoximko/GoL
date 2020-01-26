@@ -1,6 +1,7 @@
 #include <cmath>
 
 #include <QTimerEvent>
+#include <QDebug>
 
 #include "gamecontroller.h"
 
@@ -43,6 +44,20 @@ bool GameController::onStop()
 {
   stopped_ = !stopped_;
   return stopped_;
+}
+
+void GameController::onGameSpeedChanged(int update_time)
+{
+  auto const step_timer_id = startTimer(update_time);
+  if (step_timer_id != 0)
+  {
+    killTimer(step_timer_id_);
+    step_timer_id_ = step_timer_id;
+  }
+  else
+  {
+    Q_ASSERT(false);
+  }
 }
 
 void GameController::timerEvent(QTimerEvent* event)

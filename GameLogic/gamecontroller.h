@@ -26,6 +26,7 @@ public:
 public slots:
   void addPattern(PatternTrs pattern_trs);
   bool onStop();
+  void onGameSpeedChanged(int update_time);
 
 signals:
   void stepMade(Score scores);
@@ -38,7 +39,7 @@ private:
 
   void makeStep();
 
-  int const step_timer_id_ = 0;
+  int step_timer_id_ = 0;
   PlayerId const player_ = 0;
   Score const score_addition_ = 0;
 

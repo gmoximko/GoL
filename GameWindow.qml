@@ -1,6 +1,6 @@
-import QtQuick 2.10
-import QtQuick.Window 2.10
-import QtQuick.Controls 2.3
+import QtQuick 2.12
+import QtQuick.Window 2.12
+import QtQuick.Controls 2.12
 import QtSensors 5.9
 import GoL 1.0
 
@@ -8,7 +8,9 @@ Page {
   id: gameWindow
   width: parent.width
   height: parent.height
-  title: qsTr("Game of life")// + gameView.scores
+  title: "Game of life"
+
+  property alias gameSpeed: gameSpeed.value
 
   states: [
     State {
@@ -20,17 +22,6 @@ Page {
       }
     }
   ]
-
-  Keys.onReleased: {
-    switch (event.key) {
-    case Qt.Key_Space:
-      event.accepted = true
-      gameView.stop()
-      break
-    default:
-      break
-    }
-  }
 
   GameView {
     id: gameView
@@ -120,7 +111,7 @@ Page {
         }
       }
 
-      MultiPointTouchArea {
+      MultiPointTouchArea { // TapHandler
         id: touchArea
         anchors.fill: parent
         mouseEnabled: false
@@ -207,6 +198,43 @@ Page {
     }
   }
 
+  RoundButton {
+    text: "P"
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    visible: !patternsList.visible
+    onClicked: () => gameView.stop()
+  }
+
+  RoundButton {
+    text: "S"
+    anchors.top: parent.top
+    anchors.right: parent.right
+    visible: !menu.opened
+
+    Timer {
+      id: sliderUpdater
+      repeat: true
+      interval: 30
+
+      property int prevValue: 0
+      onTriggered: {
+        if (prevValue !== gameSpeed.value) {
+          prevValue = gameSpeed.value
+          gameView.gameSpeedChanged(gameSpeed.value)
+        }
+        if (!(menu.opened || menu.enter.running || menu.exit.running)) {
+          stop()
+        }
+      }
+    }
+
+    onClicked: {
+      menu.open()
+      sliderUpdater.start()
+    }
+  }
+
   ListView {
     id: patternsList
     visible: false
@@ -234,6 +262,43 @@ Page {
     function hide() {
       visible = false
       currentIndex = -1
+    }
+  }
+
+  Drawer {
+    id: menu
+    edge: Qt.RightEdge
+    width: mainWindow.width * 0.33
+    height: mainWindow.height
+
+    Column {
+      anchors.fill: parent
+
+      Label {
+        text: "Game speed"
+        width: quitButton.width
+        height: quitButton.height
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
+      }
+      Slider {
+        id: gameSpeed
+        width: quitButton.width
+        height: quitButton.height
+        snapMode: Slider.SnapAlways
+        from: 100
+        value: 50
+        to: 1
+        stepSize: 1
+      }
+      Button {
+        id: quitButton
+        text: "Quit"
+        width: parent.width
+        onClicked: {
+          mainMenu.back()
+        }
+      }
     }
   }
 }

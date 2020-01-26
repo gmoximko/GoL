@@ -1,6 +1,6 @@
-import QtQuick 2.10
-import QtQuick.Window 2.10
-import QtQuick.Controls 2.3
+import QtQuick 2.12
+import QtQuick.Window 2.12
+import QtQuick.Controls 2.12
 import GoL 1.0
 
 MainWindow {
@@ -13,6 +13,7 @@ MainWindow {
     var gameView = mainWindow.createGame(gameParams)
     gameView.width = mainMenu.width
     gameView.height = mainMenu.height
+    gameView.gameSpeed = gameParams.gameSpeed
     mainMenu.push(gameView).focus = true
   }
 
