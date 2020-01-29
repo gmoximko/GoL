@@ -54,6 +54,7 @@ class GameView : public QQuickPaintedItem
   Q_PROPERTY(qreal maxScale READ maxScale CONSTANT)
   Q_PROPERTY(qreal minScale READ minScale CONSTANT)
   Q_PROPERTY(int scores MEMBER scores_ NOTIFY scoresChanged)
+  Q_PROPERTY(bool darkTheme READ darkTheme WRITE setDarkTheme NOTIFY darkThemeChanged)
 
 public:
   using QQuickPaintedItem::QQuickPaintedItem;
@@ -68,10 +69,12 @@ public:
   void paint(QPainter* painter_ptr) override;
   void setFieldOffset(QPointF field_offset);
   void setFieldScale(qreal ratio);
+  void setDarkTheme(bool dark_theme);
 
   Q_INVOKABLE QVariant patternModelAt(int idx) const;
   Q_INVOKABLE void pressed(QPointF point);
   Q_INVOKABLE void rotatePattern(qreal angle);
+  Q_INVOKABLE void flipPattern();
   Q_INVOKABLE void selectPattern();
   Q_INVOKABLE void zoom(qreal ratio, QPointF point);
 
@@ -81,6 +84,7 @@ public slots:
 signals:
   void currentPatternChanged();
   void scoresChanged();
+  void darkThemeChanged();
   void patternSelected(Logic::PatternTrs pattern_trs);
   bool stop();
   Q_INVOKABLE void gameSpeedChanged(int update_time);
@@ -101,6 +105,7 @@ private:
   QPointF loopPos(QPointF point) const;
   qreal maxScale() const;
   qreal minScale() const;
+  bool darkTheme() const;
 
   QPointF field_offset_;
   qreal field_scale_ = 1.0;

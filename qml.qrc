@@ -2,6 +2,5 @@
     <qresource prefix="/">
         <file>GameWindow.qml</file>
         <file>MainWindow.qml</file>
-        <file>GameParameters.qml</file>
     </qresource>
 </RCC>

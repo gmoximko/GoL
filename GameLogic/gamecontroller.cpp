@@ -15,13 +15,17 @@ GameController::GameController(QObject* parent, Params const& params)
   , game_model_(params.game_model_)
   , scores_(params.initial_scores_)
 {
+  qDebug() << "GameController(" << params.update_time_ << ')';
   Q_ASSERT(scores_ > 0);
   Q_ASSERT(step_timer_id_ != 0);
   Q_ASSERT(player_ >= 0 && player_ < c_max_player_count);
   Q_ASSERT(game_model_ != nullptr);
 }
 
-GameController::~GameController() = default;
+GameController::~GameController()
+{
+  qDebug() << "~GameController()";
+}
 
 void GameController::addPattern(PatternTrs pattern_trs)
 {

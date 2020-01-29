@@ -67,6 +67,7 @@ void GameView::initialize(Logic::GameModelPtr game_model)
   Q_ASSERT(QRandomGenerator::global() != nullptr);
   auto const idx = QRandomGenerator::global()->generate() % (std::end(c_colors) - std::begin(c_colors));
   color_ = c_colors[idx];
+  setFillColor(Qt::GlobalColor::black);
   setRenderTarget(RenderTarget::FramebufferObject);
 //  setPerformanceHints(QQuickPaintedItem::FastFBOResizing);
 }
@@ -106,6 +107,7 @@ void GameView::paint(QPainter* painter_ptr)
   {
     painter.setOpacity(normalized_scale);
   }
+  painter.setPen(darkTheme() ? Qt::GlobalColor::white : Qt::GlobalColor::black);
   drawGrid(painter);
   drawCoordinates(painter);
 }
@@ -122,6 +124,11 @@ void GameView::setFieldScale(qreal field_scale)
   update();
 }
 
+void GameView::setDarkTheme(bool dark_theme)
+{
+  setFillColor(dark_theme ? Qt::GlobalColor::black : Qt::GlobalColor::white);
+}
+
 QVariant GameView::patternModelAt(int idx) const
 {
   return QVariant::fromValue(PatternModel(game_model_->patternAt(idx)));
@@ -133,7 +140,10 @@ void GameView::pressed(QPointF point)
   QPoint cell(static_cast<int>(point.x() / pixelsPerCell().x()),
               static_cast<int>(point.y() / pixelsPerCell().y()));
 
-  pattern_trs_ = QMatrix();
+  if (!pattern_trs_)
+  {
+    pattern_trs_ = QMatrix();
+  }
   auto& trs = *pattern_trs_;
   QMatrix tmp;
   tmp.translate(cell.x() - trs.dx(), cell.y() - trs.dy());
@@ -143,12 +153,29 @@ void GameView::pressed(QPointF point)
 
 void GameView::rotatePattern(qreal angle)
 {
-  if (!pattern_trs_)
+  if (pattern_trs_)
   {
-    return;
+    auto const determinant = pattern_trs_->determinant();
+    if (determinant < 0)
+    {
+      flipPattern();
+    }
+    pattern_trs_->rotate(angle);
+    if (determinant < 0)
+    {
+      flipPattern();
+    }
+    update();
   }
-  pattern_trs_->rotate(angle);
-  update();
+}
+
+void GameView::flipPattern()
+{
+  if (pattern_trs_)
+  {
+    pattern_trs_->scale(-1, 1);
+    update();
+  }
 }
 
 void GameView::selectPattern()
@@ -185,6 +212,7 @@ void GameView::selectPattern()
   emit patternSelected(qMakePair(current_pattern_, std::move(*pattern_trs_)));
   pattern_trs_.reset();
   current_pattern_ = nullptr;
+  emit currentPatternChanged();
   update();
 }
 
@@ -380,6 +408,11 @@ qreal GameView::minScale() const
   QPointF const max_cells(max_cells_x * c_pixels_per_cell.x(), max_cells_y * c_pixels_per_cell.y());
   return std::max(window()->size().width() / max_cells.x(),
                   window()->size().height() / max_cells.y());
+}
+
+bool GameView::darkTheme() const
+{
+  return fillColor() == Qt::GlobalColor::black;
 }
 
 } // View

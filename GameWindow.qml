@@ -12,6 +12,10 @@ Page {
 
   property alias gameSpeed: gameSpeed.value
 
+  StackView.onRemoved: {
+    mainWindow.destroyGame()
+  }
+
   states: [
     State {
       name: "choosePattern"
@@ -51,7 +55,7 @@ Page {
       anchors.fill: parent
 
       property real startScale: gameView.maxScale
-      property real sensitivity: 5
+      property real sensitivity: 3
 
       onPinchStarted: {
         startScale = gameView.fieldScale
@@ -205,34 +209,19 @@ Page {
     visible: !patternsList.visible
     onClicked: () => gameView.stop()
   }
-
   RoundButton {
     text: "S"
     anchors.top: parent.top
     anchors.right: parent.right
     visible: !menu.opened
-
-    Timer {
-      id: sliderUpdater
-      repeat: true
-      interval: 30
-
-      property int prevValue: 0
-      onTriggered: {
-        if (prevValue !== gameSpeed.value) {
-          prevValue = gameSpeed.value
-          gameView.gameSpeedChanged(gameSpeed.value)
-        }
-        if (!(menu.opened || menu.enter.running || menu.exit.running)) {
-          stop()
-        }
-      }
-    }
-
-    onClicked: {
-      menu.open()
-      sliderUpdater.start()
-    }
+    onClicked: () => menu.open()
+  }
+  RoundButton {
+    text: "F"
+    visible: gameView.currentPattern !== undefined
+    anchors.bottom: patternsList.top
+    anchors.right: parent.right
+    onClicked: () => gameView.flipPattern()
   }
 
   ListView {
@@ -275,6 +264,7 @@ Page {
       anchors.fill: parent
 
       Label {
+        id: gameSpeedLabel
         text: "Game speed"
         width: quitButton.width
         height: quitButton.height
@@ -284,19 +274,45 @@ Page {
       Slider {
         id: gameSpeed
         width: quitButton.width
-        height: quitButton.height
+        height: quitButton.width
         snapMode: Slider.SnapAlways
         from: 100
         value: 50
         to: 1
         stepSize: 1
+        orientation: Qt.Vertical
+        onMoved: () => gameView.gameSpeedChanged(gameSpeed.value)
+      }
+      Rectangle {
+        id: darkTheme
+        width: quitButton.width
+        height: quitButton.height
+        Switch {
+          text: "Dark theme"
+          anchors.centerIn: parent
+          checked: gameView.darkTheme
+          onClicked: {
+            gameView.darkTheme = checked
+          }
+        }
+      }
+      Rectangle {
+        color: "transparent"
+        width: parent.width
+        height: parent.height
+                - gameSpeedLabel.height
+                - gameSpeed.height
+                - darkTheme.height
+                - quitButton.height
       }
       Button {
         id: quitButton
         text: "Quit"
         width: parent.width
         onClicked: {
+          gameWindow.enabled = false
           mainMenu.back()
+          menu.close()
         }
       }
     }

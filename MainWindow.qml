@@ -11,8 +11,8 @@ MainWindow {
 
   function createGameInstance(gameParams) {
     var gameView = mainWindow.createGame(gameParams)
-    gameView.width = mainMenu.width
-    gameView.height = mainMenu.height
+    gameView.width = mainWindow.width
+    gameView.height = mainWindow.height
     gameView.gameSpeed = gameParams.gameSpeed
     mainMenu.push(gameView).focus = true
   }
@@ -20,36 +20,12 @@ MainWindow {
   Page {
     anchors.fill: parent
 
-    header: ToolBar {
-      id: toolBar
-      contentHeight: toolButton.implicitHeight
-
-      ToolButton {
-        id: toolButton
-        text: mainMenu.depth > 1 ? "\u25C0" : "\u2630"
-        font.pixelSize: Qt.application.font.pixelSize * 1.6
-        onClicked: {
-          if (mainMenu.depth > 1) {
-            mainMenu.back()
-          } else {
-            drawer.open()
-          }
-        }
-      }
-
-      Label {
-        text: mainMenu.currentItem.title
-        anchors.centerIn: parent
-      }
-    }
-
     StackView {
       id: mainMenu
       width: mainWindow.width
-      height: mainWindow.height - toolBar.contentHeight
+      height: mainWindow.height
 
       function back() {
-        if (mainWindow.destroyGame()) {}
         mainMenu.pop(null)
       }
 
@@ -60,42 +36,34 @@ MainWindow {
         }
       }
       initialItem: Page {
-        title: qsTr("Main Menu")
-      }
-    }
-  }
-
-  Drawer {
-    id: drawer
-    width: mainWindow.width * 0.66
-    height: mainWindow.height
-
-    Column {
-      anchors.fill: parent
-
-      ItemDelegate {
-        text: qsTr("Single player")
-        width: parent.width
-        onClicked: {
-          mainMenu.push(singleplayerMenu)
-          drawer.close()
+        header: ToolBar {
+          Label {
+            text: qsTr("Game of Life")
+            anchors.centerIn: parent
+          }
         }
-      }
-      ItemDelegate {
-        text: qsTr("Multiplayer")
-        width: parent.width
-        visible: false
-        enabled: isNetworkEnabled()
-        onClicked: {
-          mainMenu.push(multiplayerMenu)
-          drawer.close()
-        }
-      }
-      ItemDelegate {
-        text: qsTr("Quit")
-        width: parent.width
-        onClicked: {
-          Qt.quit()
+        Column {
+          anchors.fill: parent
+          Rectangle {
+            width: parent.width
+            height: (parent.height - startGame.height - quitButton.height) / 2
+          }
+          Button {
+            id: startGame
+            text: qsTr("Start game")
+            width: parent.width
+            onClicked: {
+              mainMenu.push(singleplayerMenu)
+            }
+          }
+          Button {
+            id: quitButton
+            text: qsTr("Quit")
+            width: parent.width
+            onClicked: {
+              Qt.quit()
+            }
+          }
         }
       }
     }
@@ -105,107 +73,50 @@ MainWindow {
     id: singleplayerMenu
 
     Page {
-      GameParameters {
+      GameParams {
         id: gameParams
+        gameSpeed: 50
       }
-      title: qsTr("Single player")
+      header: ToolBar {
+        id: toolBar
+        contentHeight: toolButton.implicitHeight
 
+        ToolButton {
+          id: toolButton
+          visible: mainMenu.depth === 2
+          text: "‹" //"\u25C0"
+          font.pixelSize: Qt.application.font.pixelSize * 1.6
+          onClicked: {
+            mainMenu.back()
+          }
+        }
+        Label {
+          text: qsTr("Field size")
+          anchors.centerIn: parent
+        }
+      }
+      Column {
+        anchors.centerIn: parent
+        Slider {
+          id: gameSpeed
+          snapMode: Slider.SnapAlways
+          from: 100
+          value: 50
+          to: 1
+          stepSize: 1
+          onMoved: () => gameParams.gameSpeed = value
+        }
+        ComboBox {
+          id: fieldSize
+          width: gameSpeed.width
+          currentIndex: 1
+          model: [1024, 2048, 4096, 8192, 16384, 32768]
+          onCurrentTextChanged: () => gameParams.fieldSize = Qt.point(currentText, currentText)
+        }
+      }
       footer: Button {
-        height: 70
         text: qsTr("Start")
-        onPressed: {
-          createGameInstance(gameParams.params)
-        }
-      }
-    }
-  }
-
-  Component {
-    id: multiplayerMenu
-
-    Item {
-      Connections {
-        target: gameParams.params
-        onStart: {
-          createGameInstance(params)
-        }
-      }
-
-      SwipeView {
-        id: swipeView
-        anchors.fill: parent
-        currentIndex: indicator.currentIndex
-
-        Page {
-          id: joinRoom
-
-          ListView {
-            anchors.fill: parent
-            model: lobbyList
-            delegate: Item {
-              width: parent.width
-              height: 40
-              MouseArea {
-                anchors.fill: parent
-                onClicked: {
-                  gameParams.params.setParams(model.modelData)
-                  joinLobby(gameParams.params)
-                }
-              }
-              Row {
-                spacing: 10
-                Text {
-                  anchors.verticalCenter: parent.verticalCenter
-                  text: model.modelData.name
-                }
-                Text {
-                  anchors.verticalCenter: parent.verticalCenter
-                  text: "%1 %2".arg(model.modelData.fieldSize.x).arg(model.modelData.fieldSize.y)
-                }
-                Text {
-                  anchors.verticalCenter: parent.verticalCenter
-                  text: model.modelData.gameSpeed
-                }
-                Text {
-                  anchors.verticalCenter: parent.verticalCenter
-                  text: model.modelData.playerCount
-                }
-              }
-            }
-          }
-
-          footer: Button {
-            height: 70
-            text: qsTr("Join")
-            onPressed: {}
-          }
-        }
-
-        Page {
-          id: createRoom
-
-          GameParameters {
-            id: gameParams
-            isMultiplayer: true
-          }
-          footer: Button {
-            height: 70
-            text: qsTr("Create")
-            onPressed: {
-              createLobby(gameParams.params)
-            }
-          }
-        }
-      }
-
-      PageIndicator {
-        id: indicator
-
-        currentIndex: swipeView.currentIndex
-        count: swipeView.count
-
-        anchors.bottom: swipeView.bottom
-        anchors.horizontalCenter: swipeView.horizontalCenter
+        onPressed: () => createGameInstance(gameParams)
       }
     }
   }

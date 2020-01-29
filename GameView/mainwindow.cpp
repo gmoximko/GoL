@@ -78,9 +78,8 @@ bool MainWindow::destroyGame()
 {
   auto const result = game_window_ != nullptr;
   game_model_ = nullptr;
-  game_window_.reset(nullptr);
-  Q_ASSERT(game_controller_ == nullptr);
-  Q_ASSERT(game_view_ == nullptr);
+  game_window_->deleteLater();
+  game_window_.take();
   suppressSignals(game_network_.data(), false);
   return result;
 }

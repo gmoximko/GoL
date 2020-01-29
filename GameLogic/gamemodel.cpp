@@ -20,6 +20,7 @@ public:
     , all_patterns_(Utilities::createPatterns())
     , life_processor_(createLifeProcessor(cells_))
   {
+    qDebug() << "GameModel(" << params.cells_ << ')';
     Q_ASSERT(Utilities::Qt::isPowerOfTwo(cells_.x()));
     Q_ASSERT(Utilities::Qt::isPowerOfTwo(cells_.y()));
     Q_ASSERT(cells_.x() <= (1 << c_pow_of_two_max_field_dimension));
