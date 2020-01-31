@@ -6,7 +6,7 @@
 #include <QSharedPointer>
 #include <QPoint>
 #include <QVector>
-#include <QMatrix>
+#include <QTransform>
 #include <QSet>
 
 namespace Logic {
@@ -30,7 +30,7 @@ struct Pattern
   virtual Score scores() const = 0;
 };
 using PatternPtr = QSharedPointer<Pattern const>;
-using PatternTrs = QPair<PatternPtr, QMatrix>;
+using PatternTrs = QPair<PatternPtr, QTransform>;
 
 class LifeUnit
 {

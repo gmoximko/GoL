@@ -1,9 +1,11 @@
 #ifndef GAMEVIEW_H
 #define GAMEVIEW_H
 
+#include <array>
+
 #include <QQuickPaintedItem>
 #include <QPoint>
-#include <QMatrix>
+#include <QTransform>
 #include <QPointer>
 
 #include "../GameLogic/gamemodel.h"
@@ -90,11 +92,12 @@ signals:
   Q_INVOKABLE void gameSpeedChanged(int update_time);
 
 private:
-  using MaybeTRS = std::optional<QMatrix>;
+  using MaybeTRS = std::optional<QTransform>;
   void drawGrid(QPainter& painter) const;
   void drawLifeCells(QPainter& painter) const;
   void drawSelectedCell(QPainter& painter) const;
   void drawUnit(QPainter& painer, QPoint cell) const;
+  void drawUnitRandomColor(QPainter& painer, QPoint cell) const;
   void drawCoordinates(QPainter& painter) const;
 
   QPointF fieldSize() const;
@@ -107,6 +110,7 @@ private:
   qreal minScale() const;
   bool darkTheme() const;
 
+  std::array<QColor, 15> colors_;
   QPointF field_offset_;
   qreal field_scale_ = 1.0;
   MaybeTRS pattern_trs_;

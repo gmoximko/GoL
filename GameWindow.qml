@@ -271,6 +271,14 @@ Page {
         horizontalAlignment: Text.AlignHCenter
         verticalAlignment: Text.AlignVCenter
       }
+      Label {
+        id: fastSpeed
+        text: "fast"
+        width: quitButton.width
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
+        font.pixelSize: gameSpeedLabel.font.pixelSize * 0.9
+      }
       Slider {
         id: gameSpeed
         width: quitButton.width
@@ -282,6 +290,14 @@ Page {
         stepSize: 1
         orientation: Qt.Vertical
         onMoved: () => gameView.gameSpeedChanged(gameSpeed.value)
+      }
+      Label {
+        id: slowSpeed
+        text: "slow"
+        width: quitButton.width
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
+        font.pixelSize: gameSpeedLabel.font.pixelSize * 0.9
       }
       Rectangle {
         id: darkTheme
@@ -301,7 +317,9 @@ Page {
         width: parent.width
         height: parent.height
                 - gameSpeedLabel.height
+                - fastSpeed.height
                 - gameSpeed.height
+                - slowSpeed.height
                 - darkTheme.height
                 - quitButton.height
       }

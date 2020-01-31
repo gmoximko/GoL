@@ -1,8 +1,10 @@
 #include <cmath>
+#include <algorithm>
+#include <random>
 
+#include <QtMath>
 #include <QPainter>
 #include <QQuickWindow>
-#include <QRandomGenerator>
 
 #include "../Utilities/qtutilities.h"
 #include "gameview.h"
@@ -18,24 +20,42 @@ constexpr auto const c_max_cells_in_screen = 4096;
 constexpr auto const c_min_cells_in_screen = 128;
 constexpr auto const c_scale_to_hide_grid = 0.5;
 
-constexpr Qt::GlobalColor c_colors[]
+void flip(QTransform& matrix)
 {
-  Qt::GlobalColor::red,
-  Qt::GlobalColor::blue,
-  Qt::GlobalColor::cyan,
-  Qt::GlobalColor::gray,
-  Qt::GlobalColor::green,
-  Qt::GlobalColor::magenta,
-  Qt::GlobalColor::darkRed,
-  Qt::GlobalColor::darkBlue,
-  Qt::GlobalColor::darkCyan,
-  Qt::GlobalColor::darkBlue,
-  Qt::GlobalColor::darkGray,
-  Qt::GlobalColor::darkGreen,
-  Qt::GlobalColor::darkYellow,
-  Qt::GlobalColor::darkMagenta,
-  Qt::GlobalColor::lightGray,
-};
+  matrix.scale(-1, 1);
+}
+
+void rotate(QTransform& matrix, qreal angle)
+{
+  matrix.rotate(angle);
+}
+
+auto makeRandomColors(decltype(std::mt19937::default_seed) seed = std::mt19937::default_seed)
+{
+  std::array<QColor, 15> result
+  {
+    Qt::GlobalColor::red,
+    Qt::GlobalColor::blue,
+    Qt::GlobalColor::cyan,
+    Qt::GlobalColor::gray,
+    Qt::GlobalColor::green,
+    Qt::GlobalColor::magenta,
+    Qt::GlobalColor::darkRed,
+    Qt::GlobalColor::darkBlue,
+    Qt::GlobalColor::darkCyan,
+    Qt::GlobalColor::darkBlue,
+    Qt::GlobalColor::darkGray,
+    Qt::GlobalColor::darkGreen,
+    Qt::GlobalColor::darkYellow,
+    Qt::GlobalColor::darkMagenta,
+    Qt::GlobalColor::lightGray,
+  };
+  std::random_device device;
+  std::mt19937 mt(device());
+  mt.seed(seed);
+  std::shuffle(result.begin(), result.end(), mt);
+  return result;
+}
 
 } // namespace
 
@@ -64,9 +84,7 @@ QPoint GameView::fieldCells() const
 void GameView::initialize(Logic::GameModelPtr game_model)
 {
   game_model_ = game_model;
-  Q_ASSERT(QRandomGenerator::global() != nullptr);
-  auto const idx = QRandomGenerator::global()->generate() % (std::end(c_colors) - std::begin(c_colors));
-  color_ = c_colors[idx];
+  colors_ = makeRandomColors();
   setFillColor(Qt::GlobalColor::black);
   setRenderTarget(RenderTarget::FramebufferObject);
 //  setPerformanceHints(QQuickPaintedItem::FastFBOResizing);
@@ -142,10 +160,10 @@ void GameView::pressed(QPointF point)
 
   if (!pattern_trs_)
   {
-    pattern_trs_ = QMatrix();
+    pattern_trs_ = QTransform();
   }
   auto& trs = *pattern_trs_;
-  QMatrix tmp;
+  QTransform tmp;
   tmp.translate(cell.x() - trs.dx(), cell.y() - trs.dy());
   trs *= tmp;
   update();
@@ -155,15 +173,15 @@ void GameView::rotatePattern(qreal angle)
 {
   if (pattern_trs_)
   {
-    auto const determinant = pattern_trs_->determinant();
-    if (determinant < 0)
+    auto const should_flip = pattern_trs_->determinant() < 0;
+    if (should_flip)
     {
-      flipPattern();
+      flip(*pattern_trs_);
     }
-    pattern_trs_->rotate(angle);
-    if (determinant < 0)
+    rotate(*pattern_trs_, angle);
+    if (should_flip)
     {
-      flipPattern();
+      flip(*pattern_trs_);
     }
     update();
   }
@@ -173,7 +191,17 @@ void GameView::flipPattern()
 {
   if (pattern_trs_)
   {
-    pattern_trs_->scale(-1, 1);
+    auto const angle = std::abs(qRadiansToDegrees(std::acos(pattern_trs_->m11())));
+    auto const should_rotate = qFuzzyCompare(angle, 90) || qFuzzyCompare(angle, 270);
+    if (should_rotate)
+    {
+      rotate(*pattern_trs_, 90);
+    }
+    flip(*pattern_trs_);
+    if (should_rotate)
+    {
+      rotate(*pattern_trs_, -90);
+    }
     update();
   }
 }
@@ -276,10 +304,9 @@ void GameView::drawGrid(QPainter& painter) const
 void GameView::drawLifeCells(QPainter& painter) const
 {
   painter.setBrush(QBrush(Qt::GlobalColor::white));
-  painter.setPen(color_);
   for (auto const unit : game_model_->lifeUnits())
   {
-    drawUnit(painter, QPoint(unit.x(), unit.y()));
+    drawUnitRandomColor(painter, QPoint(unit.x(), unit.y()));
   }
 }
 
@@ -315,6 +342,17 @@ void GameView::drawUnit(QPainter& painter, QPoint cell) const
 //  painter.drawEllipse(center, radius.x(), radius.y());
   if (boundingRect().contains(center))
   {
+    painter.drawPoint(center);
+  }
+}
+
+void GameView::drawUnitRandomColor(QPainter& painter, QPoint cell) const
+{
+  auto const center = cellToPixels(cell) + pixelsPerCell() / 2.0;
+  if (boundingRect().contains(center))
+  {
+    auto const hash = qHash(qMakePair(cell.x(), cell.y()));
+    painter.setPen(colors_[hash % colors_.size()]);
     painter.drawPoint(center);
   }
 }

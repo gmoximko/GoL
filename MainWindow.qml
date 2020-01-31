@@ -46,7 +46,7 @@ MainWindow {
           anchors.fill: parent
           Rectangle {
             width: parent.width
-            height: (parent.height - startGame.height - quitButton.height) / 2
+            height: (parent.height - startGame.height/* - quitButton.height*/) / 2
           }
           Button {
             id: startGame
@@ -56,14 +56,14 @@ MainWindow {
               mainMenu.push(singleplayerMenu)
             }
           }
-          Button {
-            id: quitButton
-            text: qsTr("Quit")
-            width: parent.width
-            onClicked: {
-              Qt.quit()
-            }
-          }
+//          Button {
+//            id: quitButton
+//            text: qsTr("Quit")
+//            width: parent.width
+//            onClicked: {
+//              Qt.quit()
+//            }
+//          }
         }
       }
     }
@@ -75,7 +75,8 @@ MainWindow {
     Page {
       GameParams {
         id: gameParams
-        gameSpeed: 50
+        gameSpeed: gameSpeedSlider.value
+        fieldSize: Qt.point(fieldSize.currentText, fieldSize.currentText)
       }
       header: ToolBar {
         id: toolBar
@@ -97,21 +98,57 @@ MainWindow {
       }
       Column {
         anchors.centerIn: parent
-        Slider {
+        Label {
+          id: gameSpeedLabel
+          text: "Game speed"
+          width: gameSpeed.width
+          horizontalAlignment: Text.AlignHCenter
+          verticalAlignment: Text.AlignVCenter
+        }
+        Row {
           id: gameSpeed
-          snapMode: Slider.SnapAlways
-          from: 100
-          value: 50
-          to: 1
-          stepSize: 1
-          onMoved: () => gameParams.gameSpeed = value
+          Label {
+            text: "slow"
+            height: parent.height
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            font.pixelSize: gameSpeedLabel.font.pixelSize * 0.9
+          }
+          Slider {
+            id: gameSpeedSlider
+            snapMode: Slider.SnapAlways
+            from: 100
+            value: 50
+            to: 1
+            stepSize: 1
+          }
+          Label {
+            text: "fast"
+            height: parent.height
+            horizontalAlignment: Text.AlignHCenter
+            verticalAlignment: Text.AlignVCenter
+            font.pixelSize: gameSpeedLabel.font.pixelSize * 0.9
+          }
+        }
+        Label {
+          text: "Field size"
+          width: gameSpeed.width
+          horizontalAlignment: Text.AlignHCenter
+          verticalAlignment: Text.AlignVCenter
         }
         ComboBox {
           id: fieldSize
           width: gameSpeed.width
           currentIndex: 1
+//          model: ListModel {
+//            ListElement { name: "very small"; value: 1024 }
+//            ListElement { name: "small"; value: 2048 }
+//            ListElement { name: "middle"; value: 4096 }
+//            ListElement { name: "large"; value: 8192 }
+//            ListElement { name: "very large"; value: 16384 }
+//            ListElement { name: "huge"; value: 32768 }
+//          }
           model: [1024, 2048, 4096, 8192, 16384, 32768]
-          onCurrentTextChanged: () => gameParams.fieldSize = Qt.point(currentText, currentText)
         }
       }
       footer: Button {
