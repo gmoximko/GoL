@@ -75,6 +75,7 @@ public:
 
   Q_INVOKABLE QVariant patternModelAt(int idx) const;
   Q_INVOKABLE void pressed(QPointF point);
+  Q_INVOKABLE void unpress();
   Q_INVOKABLE void rotatePattern(qreal angle);
   Q_INVOKABLE void flipPattern();
   Q_INVOKABLE void selectPattern();

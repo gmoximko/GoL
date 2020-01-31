@@ -16,17 +16,6 @@ Page {
     mainWindow.destroyGame()
   }
 
-  states: [
-    State {
-      name: "choosePattern"
-      when: patternsList.visible
-      PropertyChanges {
-        target: gameView
-        height: gameWindow.height - patternsList.height
-      }
-    }
-  ]
-
   GameView {
     id: gameView
     width: gameWindow.width
@@ -44,11 +33,14 @@ Page {
     }
     function selectCell(point) {
       pressed(point)
-      patternsList.show()
+      if (!patterns.opened && !patterns.enter.running)
+      {
+        patterns.open()
+      }
     }
     function selectPatt() {
       selectPattern()
-      patternsList.hide()
+      patterns.close()
     }
     PinchArea {
       id: pinchArea
@@ -203,55 +195,63 @@ Page {
   }
 
   RoundButton {
-    text: "P"
-    anchors.bottom: parent.bottom
-    anchors.right: parent.right
-    visible: !patternsList.visible
-    onClicked: () => gameView.stop()
-  }
-  RoundButton {
     text: "S"
     anchors.top: parent.top
     anchors.right: parent.right
     visible: !menu.opened
     onClicked: () => menu.open()
   }
-  RoundButton {
-    text: "F"
-    visible: gameView.currentPattern !== undefined
-    anchors.bottom: patternsList.top
-    anchors.right: parent.right
-    onClicked: () => gameView.flipPattern()
-  }
 
-  ListView {
-    id: patternsList
-    visible: false
-    clip: true
-    focus: true
+  Drawer {
+    id: patterns
+    width: mainWindow.width
+    height: mainWindow.height * 0.33
+    edge: Qt.BottomEdge
+    closePolicy: Popup.NoAutoClose
+    modal: false
+    onClosed: {
+      gameView.unpress()
+    }
 
-    anchors.bottom: parent.bottom
-    anchors.horizontalCenter: parent.horizontalCenter
-    width: gameWindow.width
-    height: gameWindow.height * 0.3
+    Column {
+      Label {
+        id: patternsLabel
+        text: "Patterns"
+        width: patterns.width
+        horizontalAlignment: Text.AlignHCenter
+        verticalAlignment: Text.AlignVCenter
+      }
+      ListView {
+        id: patternsList
+        clip: true
+        focus: true
 
-    model: gameView.patternCount
-    delegate: patternModel
-    highlight: Rectangle { color: "lightsteelblue"; radius: 5 }
-    currentIndex: -1
-    onCurrentItemChanged: {
-      if (currentIndex >= 0) {
-        gameView.currentPattern = currentItem.pattern
+        width: patterns.width
+        height: patterns.height - patternsLabel.height
+
+        model: gameView.patternCount
+        delegate: patternModel
+        highlight: Rectangle { color: "lightsteelblue"; radius: 5 }
+        currentIndex: -1
+        onCurrentItemChanged: {
+          console.assert(currentItem != null);
+          gameView.currentPattern = currentItem.pattern
+        }
       }
     }
-
-    function show() {
-      visible = true
+    RoundButton {
+      text: "F"
+      visible: gameView.currentPattern !== undefined
+      anchors.top: parent.top
+      anchors.right: parent.right
+      onClicked: () => gameView.flipPattern()
     }
-    function hide() {
-      visible = false
-      currentIndex = -1
-    }
+  }
+  RoundButton {
+    text: "P"
+    anchors.bottom: parent.bottom
+    anchors.right: parent.right
+    onClicked: () => gameView.stop()
   }
 
   Drawer {

@@ -169,6 +169,13 @@ void GameView::pressed(QPointF point)
   update();
 }
 
+void GameView::unpress()
+{
+  pattern_trs_.reset();
+  current_pattern_ = nullptr;
+  update();
+}
+
 void GameView::rotatePattern(qreal angle)
 {
   if (pattern_trs_)
