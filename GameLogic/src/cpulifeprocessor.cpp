@@ -134,6 +134,7 @@ public:
     , output_(fieldLength() / 8)
     , computed_(1)
   {
+    mainThread().check();
     auto const thread_count = threadPool().maxThreadCount();
     auto const byte_count = fieldLength() / 8;
     auto const chunk_size = byte_count / thread_count;
@@ -146,14 +147,19 @@ public:
   }
   ~CPULifeProcessor() override
   {
-    while (!computed());
-    qDebug() << "CPULifeProcessor min computaion duration " << min_computation_duration_;
+    mainThread().check();
+    qDebug() << "CPULifeProcessor min computaion duration ";
   }
 
 public: // LifeProcessor
   bool computed() const override;
 
 protected: // LifeProcessorImpl
+  void onDestroy() override
+  {
+    mainThread().check();
+    while (!computed());
+  }
   void processLife() override;
   uint8_t* data() override
   {
@@ -163,10 +169,10 @@ protected: // LifeProcessorImpl
 private:
   void handleComputeCompletion()
   {
+    computeThread().check();
     Q_ASSERT(!computed());
     Q_ASSERT(active_life_processes_ == 0);
     input_.swap(output_);
-    min_computation_duration_ = std::min(min_computation_duration_, computation_duration_.elapsed());
     computed_.ref();
   }
 
@@ -174,8 +180,6 @@ private:
   std::vector<LifeProcessChunk> life_processes_;
   std::vector<uint8_t> input_;
   std::vector<uint8_t> output_;
-  QTime computation_duration_;
-  int min_computation_duration_ = std::numeric_limits<int>::max();
   QAtomicInt active_life_processes_;
   QAtomicInt computed_;
 };
@@ -183,7 +187,11 @@ private:
 class CPULifeProcessor::LifeProcessChunk final : public QRunnable
 {
 public:
-  explicit LifeProcessChunk(QPoint range, QPoint field_size, Buffer const& input, Buffer& output, CPULifeProcessor& processor)
+  explicit LifeProcessChunk(QPoint range,
+                            QPoint field_size,
+                            Buffer const& input,
+                            Buffer& output,
+                            CPULifeProcessor& processor)
     : range_(range)
     , life_process_(field_size.x(), field_size.y())
     , input_(input)
@@ -221,9 +229,9 @@ private:
 
 void CPULifeProcessor::processLife()
 {
+  computeThread().check();
   Q_ASSERT(computed());
   computed_.deref();
-  computation_duration_.start();
   for (auto& life_process : life_processes_)
   {
     life_process.start();

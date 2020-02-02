@@ -20,10 +20,9 @@ Page {
     id: gameView
     width: gameWindow.width
     height: gameWindow.height
-    fillColor: "#000000"
     anchors.top: parent.top
     anchors.horizontalCenter: parent.horizontalCenter
-    fieldScale: maxScale
+    darkTheme: darkThemeSwitch.checked
 
     property point start: Qt.point(0, 0)
     function dragField(point) {
@@ -42,117 +41,82 @@ Page {
       selectPattern()
       patterns.close()
     }
-    PinchArea {
-      id: pinchArea
+
+    DragHandler {
+      id: dragHandler
+      target: null
+      minimumPointCount: 1
+      maximumPointCount: 1
+
+      onActiveChanged: {
+        if (active) {
+          gameView.start = centroid.position
+        }
+      }
+      onCentroidChanged: {
+        if (active) {
+          gameView.dragField(centroid.position)
+        }
+      }
+    }
+    PinchHandler {
+      target: null
+      minimumPointCount: 2
+      maximumPointCount: 2
+      minimumScale: gameView.minScale
+      maximumScale: gameView.maxScale
+
+      property int rotationTimes: 0
+
+      onActiveChanged: {
+        rotationTimes = 0
+      }
+      onScaleChanged: {
+        gameView.zoom(scale, centroid.position)
+      }
+      onRotationChanged: {
+        var cmpint = (v1, v2) => {
+          if (v1 < v2) return 1
+          if (v1 > v2) return -1
+          return 0
+        }
+        var newRotationTimes = parseInt(rotation / 90)
+        var rotationTime = cmpint(rotationTimes, newRotationTimes)
+
+        if (rotationTime !== 0) {
+          gameView.rotatePattern(90 * rotationTime)
+          rotationTimes = newRotationTimes
+        }
+      }
+    }
+    TapHandler {
+      onSingleTapped: {
+        if (eventPoint.timeHeld < longPressThreshold) {
+          gameView.selectCell(eventPoint.position)
+          eventPoint.accepted = true
+        }
+      }
+      onDoubleTapped: {
+        if (gameView.currentPattern === undefined) {
+          gameView.selectPatt()
+          eventPoint.accepted = true
+        }
+      }
+      onLongPressed: {
+        if (gameView.currentPattern !== undefined) {
+          gameView.selectPatt()
+        }
+      }
+    }
+    MouseArea {
       anchors.fill: parent
+      scrollGestureEnabled: false
+      propagateComposedEvents: true
+      acceptedButtons: { Qt.NoButton }
 
-      property real startScale: gameView.maxScale
-      property real sensitivity: 3
-
-      onPinchStarted: {
-        startScale = gameView.fieldScale
-        deltaAngle = 0
-      }
-      onPinchUpdated: {
-        var scaleRatio = startScale * (pinch.scale - pinch.previousScale)
-        gameView.zoom(scaleRatio, pinch.startCenter)
-
-        var rotationRatio = sensitivity * (pinch.angle - pinch.previousAngle)
-        rotatePattern(rotationRatio)
-      }
-      onPinchFinished: {}
-
-      property real deltaAngle: 0
-      function rotatePattern(delta) {
-        deltaAngle += delta
-        if (Math.abs(deltaAngle) >= 90) {
-          gameView.rotatePattern(deltaAngle > 0 ? 90 : -90)
-          deltaAngle = 0
-        }
-      }
-
-      MouseArea {
-        id: mouseArea
-        anchors.fill: parent
-        scrollGestureEnabled: false
-        acceptedButtons: { Qt.LeftButton | Qt.RightButton }
-
-        onPressed: {
-          gameView.start = Qt.point(mouseX, mouseY)
-        }
-        onPositionChanged: {
-          gameView.dragField(Qt.point(mouseX, mouseY))
-        }
-        onWheel: {
-          var scaleRatio = gameView.fieldScale * wheel.angleDelta.y / 120 / 10
-          gameView.zoom(scaleRatio * (wheel.inverted ? -1 : 1), Qt.point(wheel.x, wheel.y))
-        }
-        onClicked: {
-          if (!mouse.wasHeld) {
-            gameView.selectCell(Qt.point(mouse.x, mouse.y))
-            mouse.accepted = true
-          }
-        }
-        onDoubleClicked: {
-          if (gameView.currentPattern === undefined) {
-            gameView.selectPatt()
-            mouse.accepted = true
-          }
-        }
-        onPressAndHold: {
-          if (gameView.currentPattern !== undefined) {
-            gameView.selectPatt()
-            mouse.accepted = true
-          }
-        }
-      }
-
-      MultiPointTouchArea { // TapHandler
-        id: touchArea
-        anchors.fill: parent
-        mouseEnabled: false
-        minimumTouchPoints: 1
-        maximumTouchPoints: 1
-        touchPoints: [
-          TouchPoint { id: touchPoint }
-        ]
-
-        property bool wasHeld: false
-        property real releasedTime: 0
-        onReleased: {
-          if (pressAndHoldTimer.running && !wasHeld) {
-            gameView.selectCell(Qt.point(touchPoint.sceneX, touchPoint.sceneY))
-          }
-          pressAndHoldTimer.stop()
-          releasedTime = new Date().getTime()
-        }
-        onPressed: {
-          wasHeld = false
-          var currentTime = new Date().getTime()
-          if (currentTime - releasedTime < mouseArea.pressAndHoldInterval) {
-            if (gameView.currentPattern === undefined) {
-              gameView.selectPatt()
-              wasHeld = true
-            }
-          }
-          gameView.start = Qt.point(touchPoint.startX, touchPoint.startY)
-          pressAndHoldTimer.restart()
-        }
-        onTouchUpdated: {
-          gameView.dragField(Qt.point(touchPoint.sceneX, touchPoint.sceneY))
-        }
-        Timer {
-          id: pressAndHoldTimer
-          interval: mouseArea.pressAndHoldInterval
-          running: false
-          repeat: false
-          onTriggered: {
-            touchArea.wasHeld = true
-            if (gameView.currentPattern !== undefined) {
-              gameView.selectPatt()
-            }
-          }
-        }
+      onWheel: {
+        var scaleRatio = gameView.fieldScale * wheel.angleDelta.y / 120 / 10
+        gameView.zoom(scaleRatio * (wheel.inverted ? -1 : 1), Qt.point(wheel.x, wheel.y))
       }
     }
   }
@@ -211,6 +175,7 @@ Page {
     modal: false
     onClosed: {
       gameView.unpress()
+      patternsList.currentIndex = -1
     }
 
     Column {
@@ -234,8 +199,9 @@ Page {
         highlight: Rectangle { color: "lightsteelblue"; radius: 5 }
         currentIndex: -1
         onCurrentItemChanged: {
-          console.assert(currentItem != null);
-          gameView.currentPattern = currentItem.pattern
+          if (currentItem != null) {
+            gameView.currentPattern = currentItem.pattern
+          }
         }
       }
     }
@@ -304,16 +270,13 @@ Page {
         width: quitButton.width
         height: quitButton.height
         Switch {
+          id: darkThemeSwitch
           text: "Dark theme"
           anchors.centerIn: parent
-          checked: gameView.darkTheme
-          onClicked: {
-            gameView.darkTheme = checked
-          }
+          checked: true
         }
       }
       Rectangle {
-        color: "transparent"
         width: parent.width
         height: parent.height
                 - gameSpeedLabel.height
@@ -331,6 +294,9 @@ Page {
           gameWindow.enabled = false
           mainMenu.back()
           menu.close()
+          if (patterns.opened) {
+            patterns.close()
+          }
         }
       }
     }

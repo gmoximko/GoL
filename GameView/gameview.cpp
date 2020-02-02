@@ -255,19 +255,15 @@ void GameView::zoom(qreal ratio, QPointF point)
 {
   auto const max_scale = maxScale();
   auto const min_scale = minScale();
-  auto new_scale = field_scale_ + ratio;
+  auto new_scale = ratio;
   if (new_scale > max_scale)
   {
-    ratio = max_scale - field_scale_;
     new_scale = max_scale;
   }
   else if (new_scale < min_scale)
   {
-    ratio = min_scale - field_scale_;
     new_scale = min_scale;
   }
-  Q_ASSERT(field_scale_ + ratio <= max_scale);
-  Q_ASSERT(field_scale_ + ratio >= min_scale);
 
   auto const world_point = loopPos(point - field_offset_);
   auto const old_size = fieldSize();
