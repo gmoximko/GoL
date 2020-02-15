@@ -23,6 +23,9 @@ public:
   explicit GameController(QObject* parent, Params const& params);
   ~GameController() override;
 
+  void onApplicationActive();
+  void onApplicationInactive();
+
 public slots:
   void addPattern(PatternTrs pattern_trs);
   bool onStop();
@@ -47,6 +50,7 @@ private:
   StepId step_ = 0;
   Score const scores_ = 0;
   bool stopped_ = false;
+  bool stopped_due_inactive_ = false;
 };
 using GameControllerPtr = QPointer<GameController>;
 

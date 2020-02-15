@@ -90,7 +90,7 @@ signals:
   void darkThemeChanged();
   void patternSelected(Logic::PatternTrs pattern_trs);
   bool stop();
-  Q_INVOKABLE void gameSpeedChanged(int update_time);
+  void gameSpeedChanged(int update_time);
 
 private:
   using MaybeTRS = std::optional<QTransform>;

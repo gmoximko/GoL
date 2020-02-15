@@ -4,6 +4,7 @@
 #include <QThreadPool>
 #include <QDebug>
 #include <QTime>
+#include <QMutex>
 
 #include "../../Utilities/qtutilities.h"
 #include "../gamemodel.h"

@@ -98,6 +98,35 @@ void MainWindow::joinLobby(GameParams* game_params)
   game_network_->joinLobby(game_params->params());
 }
 
+void MainWindow::aboutToQuit()
+{
+  qDebug() << "aboutToQuit";
+}
+
+void MainWindow::applicationStateChanged(Qt::ApplicationState state)
+{
+  qDebug() << "applicationStateChanged " << state;
+  switch (state)
+  {
+  case Qt::ApplicationState::ApplicationSuspended:
+    break;
+  case Qt::ApplicationState::ApplicationHidden:
+    break;
+  case Qt::ApplicationState::ApplicationInactive:
+    if (game_controller_ != nullptr)
+    {
+      game_controller_->onApplicationInactive();
+    }
+    break;
+  case Qt::ApplicationState::ApplicationActive:
+    if (game_controller_ != nullptr)
+    {
+      game_controller_->onApplicationActive();
+    }
+    break;
+  }
+}
+
 void MainWindow::createGameModel(GameParams const& params)
 {
   game_model_ = Logic::createGameModel({ params.fieldSize() });

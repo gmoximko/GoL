@@ -84,6 +84,10 @@ public:
   Q_INVOKABLE void createLobby(GameParams* game_params);
   Q_INVOKABLE void joinLobby(GameParams* game_params);
 
+public slots:
+  void aboutToQuit();
+  void applicationStateChanged(Qt::ApplicationState state);
+
 private:
   void createGameModel(GameParams const& params);
   void createGameController(GameParams const& params);
@@ -95,6 +99,7 @@ private:
   QScopedPointer<QQuickItem> game_window_;
   Network::GameNetworkPtr game_network_;
   GameViewPtr game_view_;
+  bool game_controller_was_stopped_ = false;
 };
 
 }

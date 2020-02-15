@@ -27,6 +27,28 @@ GameController::~GameController()
   qDebug() << "~GameController()";
 }
 
+void GameController::onApplicationActive()
+{
+  if (stopped_due_inactive_)
+  {
+    Q_ASSERT(stopped_);
+    stopped_due_inactive_ = false;
+    onStop();
+    Q_ASSERT(!stopped_);
+  }
+}
+
+void GameController::onApplicationInactive()
+{
+  if (!stopped_)
+  {
+    Q_ASSERT(!stopped_due_inactive_);
+    stopped_due_inactive_ = true;
+    onStop();
+    Q_ASSERT(stopped_);
+  }
+}
+
 void GameController::addPattern(PatternTrs pattern_trs)
 {
   auto const& pattern = pattern_trs.first;

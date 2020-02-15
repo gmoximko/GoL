@@ -55,8 +55,9 @@ macx|ios {
     OBJECTIVE_SOURCES += GameLogic/src/metallifeprocessor.mm
 }
 else: unix|win32 {
-    LIBS += -lOpenCL
-    SOURCES += GameLogic/src/opencllifeprocessor.cpp
+    SOURCES += GameLogic/src/vulkanlifeprocessor.cpp
+#    LIBS += -lOpenCL
+#    SOURCES += GameLogic/src/opencllifeprocessor.cpp
 }
 
 release {

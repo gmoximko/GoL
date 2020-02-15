@@ -89,18 +89,30 @@ Page {
         }
       }
     }
+    Timer {
+      id: singleTapTimer
+      interval: 200
+      onTriggered: {
+        gameView.selectCell(pointPosition)
+      }
+
+      property point pointPosition: Qt.point(0, 0)
+    }
     TapHandler {
       onSingleTapped: {
         if (eventPoint.timeHeld < longPressThreshold) {
-          gameView.selectCell(eventPoint.position)
+          singleTapTimer.pointPosition = eventPoint.position
+          singleTapTimer.restart()
           eventPoint.accepted = true
         }
       }
       onDoubleTapped: {
         if (gameView.currentPattern === undefined) {
-          gameView.selectPatt()
-          eventPoint.accepted = true
+          gameView.pressed(eventPoint.position)
         }
+        singleTapTimer.stop()
+        gameView.selectPatt()
+        eventPoint.accepted = true
       }
       onLongPressed: {
         if (gameView.currentPattern !== undefined) {
@@ -114,9 +126,9 @@ Page {
       propagateComposedEvents: true
       acceptedButtons: { Qt.NoButton }
 
-      onWheel: {
-        var scaleRatio = gameView.fieldScale * wheel.angleDelta.y / 120 / 10
-        gameView.zoom(scaleRatio * (wheel.inverted ? -1 : 1), Qt.point(wheel.x, wheel.y))
+      onWheel: { // TODO
+//        var scaleRatio = gameView.fieldScale * wheel.angleDelta.y / 120 / 10
+//        gameView.zoom(scaleRatio * (wheel.inverted ? -1 : 1), Qt.point(wheel.x, wheel.y))
       }
     }
   }

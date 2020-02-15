@@ -390,7 +390,7 @@ void GameView::drawCoordinates(QPainter& painter) const
     auto const number_str = QString::number(numbers.y());
 
     QPointF left(0, pos_y);
-    QPointF right(window.width() - font_metrics.width(number_str), pos_y);
+    QPointF right(window.width() - font_metrics.horizontalAdvance(number_str), pos_y);
     painter.drawText(left, number_str);
     painter.drawText(right, number_str);
   }
