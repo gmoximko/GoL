@@ -14,6 +14,7 @@ GameController::GameController(QObject* parent, Params const& params)
   , score_addition_(params.initial_scores_)
   , game_model_(params.game_model_)
   , scores_(params.initial_scores_)
+  , update_time_(params.update_time_)
 {
   qDebug() << "GameController(" << params.update_time_ << ')';
   Q_ASSERT(scores_ > 0);
@@ -49,6 +50,14 @@ void GameController::onApplicationInactive()
   }
 }
 
+Serializable::SavedData GameController::serialize() const
+{
+  SavedData data;
+  data["updateTime"] = update_time_;
+  data["stopped"] = stopped_;
+  return data;
+}
+
 void GameController::addPattern(PatternTrs pattern_trs)
 {
   auto const& pattern = pattern_trs.first;
@@ -79,10 +88,11 @@ void GameController::onGameSpeedChanged(int update_time)
   {
     killTimer(step_timer_id_);
     step_timer_id_ = step_timer_id;
+    update_time_ = update_time;
   }
   else
   {
-    Q_ASSERT(false);
+    Q_UNREACHABLE();
   }
 }
 

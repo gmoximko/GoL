@@ -7,7 +7,7 @@
 
 namespace Logic {
 
-class GameController final : public QObject
+class GameController final : public QObject, public Serializable
 {
   Q_OBJECT
 
@@ -25,6 +25,9 @@ public:
 
   void onApplicationActive();
   void onApplicationInactive();
+
+public: // Serializable
+  SavedData serialize() const override;
 
 public slots:
   void addPattern(PatternTrs pattern_trs);
@@ -49,6 +52,7 @@ private:
   GameModelMutablePtr game_model_;
   StepId step_ = 0;
   Score const scores_ = 0;
+  int update_time_ = 0;
   bool stopped_ = false;
   bool stopped_due_inactive_ = false;
 };

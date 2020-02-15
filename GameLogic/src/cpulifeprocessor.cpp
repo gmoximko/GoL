@@ -161,6 +161,10 @@ protected: // LifeProcessorImpl
     while (!computed());
   }
   void processLife() override;
+  uint8_t const* data() const override
+  {
+    return input_.data();
+  }
   uint8_t* data() override
   {
     return input_.data();

@@ -2,6 +2,8 @@
 #include <QQmlContext>
 #include <QScopedPointer>
 #include <QGuiApplication>
+#include <QStandardPaths>
+#include <QDir>
 
 #include "../Utilities/qtutilities.h"
 #include "mainwindow.h"
@@ -48,6 +50,7 @@ MainWindow::MainWindow(QQuickItem* parent)
   {
     qDebug() << e.what();
   }
+  loadGame();
 }
 
 QQuickItem* MainWindow::createGame(GameParams* game_params)
@@ -101,6 +104,7 @@ void MainWindow::joinLobby(GameParams* game_params)
 void MainWindow::aboutToQuit()
 {
   qDebug() << "aboutToQuit";
+  saveGame();
 }
 
 void MainWindow::applicationStateChanged(Qt::ApplicationState state)
@@ -109,6 +113,7 @@ void MainWindow::applicationStateChanged(Qt::ApplicationState state)
   switch (state)
   {
   case Qt::ApplicationState::ApplicationSuspended:
+    saveGame();
     break;
   case Qt::ApplicationState::ApplicationHidden:
     break;
@@ -125,6 +130,66 @@ void MainWindow::applicationStateChanged(Qt::ApplicationState state)
     }
     break;
   }
+}
+
+void MainWindow::saveGame() const
+{
+  if (game_model_ == nullptr || game_controller_ == nullptr || game_view_ == nullptr)
+  {
+    return;
+  }
+  QMap<QString, QVariant> data;
+  data["gameModel"] = game_model_->serialize();
+  data["gameController"] = game_controller_->serialize();
+  data["gameView"] = game_view_->serialize();
+  Q_ASSERT(std::none_of(data.cbegin(), data.cend(), [](auto const& piece)
+  {
+    return piece.toMap().empty();
+  }));
+  writeSave(data);
+}
+
+void MainWindow::loadGame()
+{
+  auto const save = readSave();
+  auto const data = save.toMap();
+  if (std::any_of(data.cbegin(), data.cend(), [](auto const& piece)
+    {
+      return piece.toMap().empty();
+    }))
+  {
+    return;
+  }
+}
+
+void MainWindow::writeSave(QVariant const &data) const
+{
+  auto const app_data = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+  Q_ASSERT(!app_data.isEmpty());
+  QDir().mkpath(app_data);
+  QFile saved_game(app_data + "/savedGame");
+  if (!saved_game.open(QIODevice::WriteOnly))
+  {
+    Q_UNREACHABLE();
+    return;
+  }
+  QDataStream stream(&saved_game);
+  stream << data;
+}
+
+QVariant MainWindow::readSave() const
+{
+  auto const app_data = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+  Q_ASSERT(!app_data.isEmpty());
+  QVariant result;
+  QFile saved_game(app_data + "/savedGame");
+  if (saved_game.open(QIODevice::ReadOnly))
+  {
+    QDataStream stream(&saved_game);
+    stream >> result;
+  }
+  saved_game.remove();
+  return result;
 }
 
 void MainWindow::createGameModel(GameParams const& params)

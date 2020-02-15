@@ -66,8 +66,8 @@ private:
   uint16_t x_ = 0;
   uint16_t y_ = 0;
 };
-static_assert(sizeof(LifeUnit) == sizeof(uint32_t), "sizeof(LifeUnit)");
-static_assert(std::is_trivially_copyable_v<LifeUnit>, "");
+static_assert(sizeof(LifeUnit) == sizeof(uint32_t));
+static_assert(std::is_trivially_copyable_v<LifeUnit>);
 uint qHash(LifeUnit unit, uint seed);
 using LifeUnits = std::vector<LifeUnit>;
 
@@ -80,11 +80,20 @@ struct LifeProcessor
   virtual void destroy() = 0;
   virtual void addUnits(LifeUnits units) = 0;
   virtual void processLife(bool compute) = 0;
+  virtual QByteArray serialize() const = 0;
 };
 using LifeProcessorPtr = std::unique_ptr<LifeProcessor>;
 LifeProcessorPtr createLifeProcessor(QPoint field_size);
 
-struct GameModel
+struct Serializable
+{
+  using SavedData = QMap<QString, QVariant>;
+
+  virtual ~Serializable() = default;
+  virtual SavedData serialize() const = 0;
+};
+
+struct GameModel : public Serializable
 {
   struct Params
   {

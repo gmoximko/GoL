@@ -27,6 +27,7 @@ public: // LifeProcessor
   void destroy() final;
   void addUnits(LifeUnits units) final;
   void processLife(bool compute) final;
+  QByteArray serialize() const final;
 
 public:
   SizeT fieldLength() const
@@ -57,6 +58,7 @@ protected:
   virtual void onInit() {}
   virtual void onDestroy() {}
   virtual void processLife() = 0;
+  virtual uint8_t const* data() const = 0;
   virtual uint8_t* data() = 0;
 
 private: // QThread

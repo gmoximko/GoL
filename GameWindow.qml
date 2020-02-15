@@ -22,7 +22,6 @@ Page {
     height: gameWindow.height
     anchors.top: parent.top
     anchors.horizontalCenter: parent.horizontalCenter
-    darkTheme: darkThemeSwitch.checked
 
     property point start: Qt.point(0, 0)
     function dragField(point) {
@@ -282,10 +281,10 @@ Page {
         width: quitButton.width
         height: quitButton.height
         Switch {
-          id: darkThemeSwitch
+          Component.onCompleted: checked = gameView.darkTheme
           text: "Dark theme"
           anchors.centerIn: parent
-          checked: true
+          onCheckedChanged: gameView.darkTheme = checked
         }
       }
       Rectangle {

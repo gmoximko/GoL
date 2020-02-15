@@ -46,7 +46,7 @@ private:
   Logic::PatternPtr pattern_ptr_;
 };
 
-class GameView : public QQuickPaintedItem
+class GameView : public QQuickPaintedItem, public Logic::Serializable
 {
   Q_OBJECT
   Q_PROPERTY(QVariant currentPattern READ currentPattern WRITE setCurrentPattern NOTIFY currentPatternChanged)
@@ -62,6 +62,10 @@ public:
   using QQuickPaintedItem::QQuickPaintedItem;
   ~GameView() override;
 
+public: // Serializable
+  SavedData serialize() const override;
+
+public:
   QVariant currentPattern() const;
   Logic::SizeT patternCount() const;
   QPoint fieldCells() const;
@@ -114,11 +118,11 @@ private:
   std::array<QColor, 15> colors_;
   QPointF field_offset_;
   qreal field_scale_ = 1.0;
+  uint32_t seed_ = 0;
   MaybeTRS pattern_trs_;
   Logic::PatternPtr current_pattern_;
   Logic::GameModelPtr game_model_;
   Logic::Score scores_ = 0;
-  Qt::GlobalColor color_ = Qt::GlobalColor::red;
 };
 using GameViewPtr = QPointer<GameView>;
 

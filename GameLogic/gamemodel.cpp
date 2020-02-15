@@ -48,6 +48,16 @@ public:
     qDebug() << "~GameModel()";
   }
 
+public: // Serializable
+  SavedData serialize() const override
+  {
+    SavedData data;
+    data["cells"] = cells_;
+    data["lifeUnits"] = life_processor_->serialize();
+    return data;
+  }
+
+public:
   QPoint cells() const override
   {
     return cells_;

@@ -117,6 +117,12 @@ void LifeProcessorImpl::processLife(bool compute)
   }
 }
 
+QByteArray LifeProcessorImpl::serialize() const
+{
+  static_assert(std::is_same_v<uint8_t, char> || std::is_same_v<uint8_t, unsigned char>);
+  return QByteArray(reinterpret_cast<char const*>(data()), fieldLength() / 8);
+}
+
 void LifeProcessorImpl::run()
 {
   computeThread().check();

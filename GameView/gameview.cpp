@@ -5,6 +5,7 @@
 #include <QtMath>
 #include <QPainter>
 #include <QQuickWindow>
+#include <QSettings>
 
 #include "../Utilities/qtutilities.h"
 #include "gameview.h"
@@ -13,12 +14,14 @@ namespace View {
 
 namespace {
 
-constexpr auto const c_pattern_selection_color = Qt::GlobalColor::yellow;
-constexpr auto const c_pixels_per_cell = QPointF(3.0, 3.0);
-constexpr auto const c_life_pixels_ratio = 0.3;
-constexpr auto const c_max_cells_in_screen = 4096;
-constexpr auto const c_min_cells_in_screen = 128;
-constexpr auto const c_scale_to_hide_grid = 0.5;
+constexpr auto c_dark_theme_color = Qt::GlobalColor::black;
+constexpr auto c_light_theme_color = Qt::GlobalColor::white;
+constexpr auto c_pattern_selection_color = Qt::GlobalColor::yellow;
+constexpr auto c_pixels_per_cell = QPointF(3.0, 3.0);
+constexpr auto c_life_pixels_ratio = 0.3;
+constexpr auto c_max_cells_in_screen = 4096;
+constexpr auto c_min_cells_in_screen = 128;
+constexpr auto c_scale_to_hide_grid = 0.5;
 
 void flip(QTransform& matrix)
 {
@@ -30,7 +33,7 @@ void rotate(QTransform& matrix, qreal angle)
   matrix.rotate(angle);
 }
 
-auto makeRandomColors(decltype(std::mt19937::default_seed) seed = std::mt19937::default_seed)
+auto makeRandomColors(std::mt19937& mt)
 {
   std::array<QColor, 15> result
   {
@@ -50,9 +53,6 @@ auto makeRandomColors(decltype(std::mt19937::default_seed) seed = std::mt19937::
     Qt::GlobalColor::darkMagenta,
     Qt::GlobalColor::lightGray,
   };
-  std::random_device device;
-  std::mt19937 mt(device());
-  mt.seed(seed);
   std::shuffle(result.begin(), result.end(), mt);
   return result;
 }
@@ -62,6 +62,15 @@ auto makeRandomColors(decltype(std::mt19937::default_seed) seed = std::mt19937::
 GameView::~GameView()
 {
   qDebug() << "~GameView()";
+}
+
+Logic::Serializable::SavedData GameView::serialize() const
+{
+  SavedData data;
+  data["fieldOffset"] = field_offset_;
+  data["fieldScale"] = field_scale_;
+  data["seed"] = seed_;
+  return data;
 }
 
 QVariant GameView::currentPattern() const
@@ -83,9 +92,18 @@ QPoint GameView::fieldCells() const
 
 void GameView::initialize(Logic::GameModelPtr game_model)
 {
+#if defined(QT_DEBUG)
+  seed_ = std::mt19937::default_seed;
+#else
+  std::srand(std::time(nullptr));
+  seed_ = std::rand();
+#endif
+  std::random_device device;
+  std::mt19937 mt(device());
+  mt.seed(seed_);
+  colors_ = makeRandomColors(mt);
   game_model_ = game_model;
-  colors_ = makeRandomColors();
-  setFillColor(Qt::GlobalColor::black);
+  setDarkTheme(QSettings().value("darkTheme", true).toBool());
   setRenderTarget(RenderTarget::FramebufferObject);
 //  setPerformanceHints(QQuickPaintedItem::FastFBOResizing);
 }
@@ -125,7 +143,7 @@ void GameView::paint(QPainter* painter_ptr)
   {
     painter.setOpacity(normalized_scale);
   }
-  painter.setPen(darkTheme() ? Qt::GlobalColor::white : Qt::GlobalColor::black);
+  painter.setPen(darkTheme() ? c_light_theme_color : c_dark_theme_color);
   drawGrid(painter);
   drawCoordinates(painter);
 }
@@ -144,7 +162,10 @@ void GameView::setFieldScale(qreal field_scale)
 
 void GameView::setDarkTheme(bool dark_theme)
 {
-  setFillColor(dark_theme ? Qt::GlobalColor::black : Qt::GlobalColor::white);
+  auto const color = dark_theme ? c_dark_theme_color : c_light_theme_color;
+  setFillColor(color);
+  QSettings().setValue("darkTheme", dark_theme);
+  emit darkThemeChanged();
 }
 
 QVariant GameView::patternModelAt(int idx) const
@@ -453,7 +474,7 @@ qreal GameView::minScale() const
 
 bool GameView::darkTheme() const
 {
-  return fillColor() == Qt::GlobalColor::black;
+  return fillColor() == c_dark_theme_color;
 }
 
 } // View

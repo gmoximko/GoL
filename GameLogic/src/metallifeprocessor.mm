@@ -159,7 +159,7 @@ public:
     command_queue_ = [device newCommandQueue];
     Q_ASSERT(command_queue_);
 
-    NSUInteger bytes = width * height / 8;
+    NSUInteger bytes = fieldLength() / 8;
     input_ = [device newBufferWithLength: bytes options: MTLResourceStorageModeShared];
     output_ = [device newBufferWithLength: bytes options: MTLResourceStorageModeShared];
     field_size_ = MTLSizeMake(bytes, 1, 1);
@@ -210,6 +210,10 @@ protected: // LifeProcessorImpl
       handleComputeCompletion();
     }];
     [command_buffer commit];
+  }
+  uint8_t const* data() const override
+  {
+    return static_cast<uint8_t const*>([input_ contents]);
   }
   uint8_t* data() override
   {

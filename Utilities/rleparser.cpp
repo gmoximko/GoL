@@ -61,7 +61,7 @@ void readPoints(QTextStream& stream, QPoint size, Logic::Points& points)
       Q_ASSERT(cell_y >= 0 && cell_y <= size.y());
     }
   }
-  Q_ASSERT(false);
+  Q_UNREACHABLE();
 }
 
 std::tuple<QString, QPoint, Logic::Points> readPattern(QTextStream& stream)

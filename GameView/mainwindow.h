@@ -89,6 +89,12 @@ public slots:
   void applicationStateChanged(Qt::ApplicationState state);
 
 private:
+  void writeSave(QVariant const& data) const;
+  QVariant readSave() const;
+
+  void saveGame() const;
+  void loadGame();
+
   void createGameModel(GameParams const& params);
   void createGameController(GameParams const& params);
   void createGameView(GameParams const& params);
