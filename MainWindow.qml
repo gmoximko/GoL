@@ -8,9 +8,25 @@ MainWindow {
   visible: true
   width: Screen.desktopAvailableWidth
   height: Screen.desktopAvailableHeight
+  Timer {
+    id: loadTimer
+    interval: 1
+    onTriggered: {
+      let gameView = loadGame()
+      if (gameView !== null) {
+        gameView.width = mainWindow.width
+        gameView.height = mainWindow.height
+        mainMenu.push(singleplayerMenu, {}, StackView.Immediate)
+        mainMenu.push(gameView, {}, StackView.Immediate).focus = true
+      }
+    }
+  }
+  Component.onCompleted: {
+    loadTimer.start()
+  }
 
   function createGameInstance(gameParams) {
-    var gameView = mainWindow.createGame(gameParams)
+    let gameView = mainWindow.createGame(gameParams)
     gameView.width = mainWindow.width
     gameView.height = mainWindow.height
     gameView.gameSpeed = gameParams.gameSpeed

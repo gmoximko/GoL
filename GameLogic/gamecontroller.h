@@ -21,6 +21,7 @@ public:
   };
 
   explicit GameController(QObject* parent, Params const& params);
+  explicit GameController(QObject* parent, GameModelMutablePtr game_model, SavedData const& data);
   ~GameController() override;
 
   void onApplicationActive();
@@ -45,6 +46,7 @@ private:
 
   void makeStep();
 
+  int update_time_ = 0;
   int step_timer_id_ = 0;
   PlayerId const player_ = 0;
   Score const score_addition_ = 0;
@@ -52,7 +54,6 @@ private:
   GameModelMutablePtr game_model_;
   StepId step_ = 0;
   Score const scores_ = 0;
-  int update_time_ = 0;
   bool stopped_ = false;
   bool stopped_due_inactive_ = false;
 };

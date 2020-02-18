@@ -4,6 +4,47 @@
 
 namespace Logic {
 
+namespace {
+
+template<typename Chunk>
+void fillLifeUnits(uint8_t const* buffer, QPoint range, QPoint field_size, LifeUnits& life_units)
+{
+  auto const data = reinterpret_cast<Chunk const*>(buffer);
+  auto const begin = data + range.x();
+  auto const end   = data + range.y();
+
+  for (auto const* iter = begin; iter != end; ++iter)
+  {
+    auto const bytes = *iter;
+    if (bytes == 0)
+    {
+      continue;
+    }
+    auto const offset = static_cast<Chunk>(iter - begin + range.x()) * sizeof(Chunk);
+    for (Chunk byte = 0; byte < sizeof(Chunk); ++byte)
+    {
+      auto const bits = bytes >> (byte * 8) & static_cast<Chunk>(0xFF);
+      if (bits == 0)
+      {
+        continue;
+      }
+      for (Chunk bit = 0; bit < 8; ++bit)
+      {
+        auto const life = bits & (1 << bit);
+        if (life != 0)
+        {
+          auto const idx = (offset + byte) * 8 + bit;
+          auto const x = static_cast<uint16_t>(idx % field_size.x());
+          auto const y = static_cast<uint16_t>(idx / field_size.y());
+          life_units.emplace_back(LifeUnit(x, y));
+        }
+      }
+    }
+  }
+}
+
+} // namespace
+
 template<typename Chunk>
 class LifeProcessorImpl::PostProcess : public QRunnable
 {
@@ -27,39 +68,8 @@ public:
   }
   void run() override
   {
-    auto const data = reinterpret_cast<Chunk const*>(processor_.data());
-    auto const begin = data + range_.x();
-    auto const end   = data + range_.y();
-
     chunk_units_.clear();
-    for (auto const* iter = begin; iter != end; ++iter)
-    {
-      auto const bytes = *iter;
-      if (bytes == 0)
-      {
-        continue;
-      }
-      auto const offset = static_cast<Chunk>(iter - begin + range_.x()) * sizeof(Chunk);
-      for (Chunk byte = 0; byte < sizeof(Chunk); ++byte)
-      {
-        auto const bits = bytes >> (byte * 8) & static_cast<Chunk>(0xFF);
-        if (bits == 0)
-        {
-          continue;
-        }
-        for (Chunk bit = 0; bit < 8; ++bit)
-        {
-          auto const life = bits & (1 << bit);
-          if (life != 0)
-          {
-            auto const idx = (offset + byte) * 8 + bit;
-            auto const x = static_cast<uint16_t>(idx % processor_.cols());
-            auto const y = static_cast<uint16_t>(idx / processor_.rows());
-            chunk_units_.emplace_back(LifeUnit(x, y));
-          }
-        }
-      }
-    }
+    fillLifeUnits<Chunk>(processor_.data(), range_, processor_.field_size_, chunk_units_);
     --processor_.active_post_processes_;
   }
 
@@ -80,10 +90,11 @@ LifeProcessorImpl::~LifeProcessorImpl()
   qDebug() << "LifeProcessor min post process duration ";
 }
 
-void LifeProcessorImpl::init()
+void LifeProcessorImpl::init(QByteArray const& life_units)
 {
   mainThread().check();
   onInit();
+  loadLifeUnits(life_units);
   start();
 }
 
@@ -204,7 +215,21 @@ void LifeProcessorImpl::updateData()
   input_.clear();
 }
 
-LifeProcessorPtr createLifeProcessor(QPoint field_size)
+void LifeProcessorImpl::loadLifeUnits(QByteArray const& life_units)
+{
+  if (life_units.isEmpty())
+  {
+    return;
+  }
+  Q_ASSERT(fieldLength() == static_cast<SizeT>(life_units.size() * 8));
+  std::memcpy(data(), life_units.data(), life_units.size());
+  fillLifeUnits<Chunk>(reinterpret_cast<uint8_t const*>(life_units.data()),
+                       QPoint(0, life_units.size() / sizeof(Chunk)),
+                       field_size_,
+                       life_units_);
+}
+
+LifeProcessorPtr createLifeProcessor(QPoint field_size, QByteArray const& life_units)
 {
   LifeProcessorPtr result;
   try
@@ -217,7 +242,7 @@ LifeProcessorPtr createLifeProcessor(QPoint field_size)
     result = createCPULifeProcessor(field_size);
   }
   Q_ASSERT(result != nullptr);
-  result->init();
+  result->init(life_units);
   return result;
 }
 

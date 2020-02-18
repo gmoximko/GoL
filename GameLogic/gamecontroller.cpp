@@ -9,18 +9,31 @@ namespace Logic {
 
 GameController::GameController(QObject* parent, Params const& params)
   : QObject(parent)
-  , step_timer_id_(startTimer(params.update_time_, Qt::TimerType::PreciseTimer))
-  , player_(params.current_player_)
-  , score_addition_(params.initial_scores_)
-  , game_model_(params.game_model_)
-  , scores_(params.initial_scores_)
   , update_time_(params.update_time_)
+  , step_timer_id_(startTimer(update_time_, Qt::TimerType::PreciseTimer))
+  , game_model_(params.game_model_)
 {
-  qDebug() << "GameController(" << params.update_time_ << ')';
-  Q_ASSERT(scores_ > 0);
+  qDebug() << "GameController(" << update_time_ << ')';
   Q_ASSERT(step_timer_id_ != 0);
-  Q_ASSERT(player_ >= 0 && player_ < c_max_player_count);
   Q_ASSERT(game_model_ != nullptr);
+}
+
+GameController::GameController(QObject* parent,
+                               GameModelMutablePtr game_model,
+                               SavedData const& data)
+  : QObject(parent)
+  , update_time_(data["updateTime"].toInt())
+  , step_timer_id_(startTimer(update_time_, Qt::TimerType::PreciseTimer))
+  , game_model_(game_model)
+  , stopped_(data["stopped"].toBool())
+{
+  qDebug() << "GameController(" << update_time_ << ')';
+  Q_ASSERT(game_model_ != nullptr);
+
+  if (step_timer_id_ == 0)
+  {
+    throw std::runtime_error("updateTime is greater than max or less than a min!");
+  }
 }
 
 GameController::~GameController()

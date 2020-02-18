@@ -38,6 +38,7 @@ public:
   auto gameSpeed() const { return game_params_.game_speed_; }
   auto playerCount() const { return game_params_.player_count_; }
   auto initialScores() const { return game_params_.initial_scores_; }
+  auto empty() const { return fieldSize() == QPoint(); }
 
   auto lobby() { return lobby_; }
   void setName(QString name) { game_params_.name_ = std::move(name); }
@@ -80,6 +81,7 @@ public:
   Q_INVOKABLE bool isNetworkEnabled() const { return game_network_ != nullptr; }
 
   Q_INVOKABLE QQuickItem* createGame(GameParams* game_params);
+  Q_INVOKABLE QQuickItem* loadGame();
   Q_INVOKABLE bool destroyGame();
   Q_INVOKABLE void createLobby(GameParams* game_params);
   Q_INVOKABLE void joinLobby(GameParams* game_params);
@@ -92,12 +94,13 @@ private:
   void writeSave(QVariant const& data) const;
   QVariant readSave() const;
 
+  void bindGame() const;
   void saveGame() const;
-  void loadGame();
+  void unloadGame();
 
-  void createGameModel(GameParams const& params);
-  void createGameController(GameParams const& params);
-  void createGameView(GameParams const& params);
+  void createGameModel(GameParams const& params, Logic::Serializable::SavedData const& data);
+  void createGameController(GameParams const& params, Logic::Serializable::SavedData const& data);
+  void createGameView(Logic::Serializable::SavedData const& data);
   void initializeLobby(Network::LobbyPtr lobby);
 
   Logic::GameModelMutablePtr game_model_;

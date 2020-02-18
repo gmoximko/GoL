@@ -15,12 +15,14 @@ template<class PatternsStrategy = AccumulatePatterns>
 class GameModelImpl final : public GameModel
 {
 public:
-  explicit GameModelImpl(Params const& params)
-    : cells_(params.cells_)
+  explicit GameModelImpl(Params const& params) : GameModelImpl(params.cells_, {})
+  {}
+  explicit GameModelImpl(QPoint cells, QByteArray const& life_units)
+    : cells_(cells)
     , all_patterns_(Utilities::createPatterns())
-    , life_processor_(createLifeProcessor(cells_))
+    , life_processor_(createLifeProcessor(cells_, life_units))
   {
-    qDebug() << "GameModel(" << params.cells_ << ')';
+    qDebug() << "GameModel(" << cells_ << ')';
     Q_ASSERT(Utilities::Qt::isPowerOfTwo(cells_.x()));
     Q_ASSERT(Utilities::Qt::isPowerOfTwo(cells_.y()));
     Q_ASSERT(cells_.x() <= (1 << c_pow_of_two_max_field_dimension));
@@ -105,6 +107,17 @@ uint qHash(LifeUnit unit, uint seed)
 GameModelMutablePtr createGameModel(GameModel::Params const& params)
 {
   return Utilities::Qt::makeShared<GameModelImpl<>>(params);
+}
+
+GameModelMutablePtr createGameModel(Serializable::SavedData const& data)
+{
+  auto const field_size = data["cells"].toPoint();
+  auto const life_units = data["lifeUnits"].toByteArray();
+  if (life_units.isEmpty() || field_size.x() * field_size.y() != life_units.size() * 8)
+  {
+    throw std::runtime_error("cells and lifeUnits have mismatch size!");
+  }
+  return Utilities::Qt::makeShared<GameModelImpl<>>(field_size, life_units);
 }
 
 } // Logic

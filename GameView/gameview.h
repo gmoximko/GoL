@@ -71,6 +71,7 @@ public:
   QPoint fieldCells() const;
 
   void initialize(Logic::GameModelPtr game_model);
+  void initialize(Logic::GameModelPtr game_model, SavedData const& data);
   void setCurrentPattern(QVariant const& pattern_model);
   void paint(QPainter* painter_ptr) override;
   void setFieldOffset(QPointF field_offset);

@@ -23,7 +23,7 @@ public: // LifeProcessor
     return life_units_;
   }
 
-  void init() final;
+  void init(QByteArray const& life_units) final;
   void destroy() final;
   void addUnits(LifeUnits units) final;
   void processLife(bool compute) final;
@@ -72,6 +72,7 @@ private:
   void prepareLifeUnits(std::vector<PostProcess<Chunk>> const& post_processes);
   void startAndWaitPostProcesses(std::vector<PostProcess<Chunk>>& post_processes);
   void updateData();
+  void loadLifeUnits(QByteArray const& life_units);
 
   QPoint const field_size_;
   LifeUnits life_units_;
@@ -87,7 +88,7 @@ private:
 
 LifeProcessorPtr createGPULifeProcessor(QPoint field_size);
 LifeProcessorPtr createCPULifeProcessor(QPoint field_size);
-LifeProcessorPtr createLifeProcessor(QPoint field_size);
+LifeProcessorPtr createLifeProcessor(QPoint field_size, QByteArray const& data);
 
 } // Logic
 

@@ -76,14 +76,14 @@ struct LifeProcessor
   virtual ~LifeProcessor() = default;
   virtual LifeUnits const& lifeUnits() const = 0;
 
-  virtual void init() = 0;
+  virtual void init(QByteArray const& life_units) = 0;
   virtual void destroy() = 0;
   virtual void addUnits(LifeUnits units) = 0;
   virtual void processLife(bool compute) = 0;
   virtual QByteArray serialize() const = 0;
 };
 using LifeProcessorPtr = std::unique_ptr<LifeProcessor>;
-LifeProcessorPtr createLifeProcessor(QPoint field_size);
+LifeProcessorPtr createLifeProcessor(QPoint field_size, QByteArray const& data);
 
 struct Serializable
 {
@@ -111,6 +111,7 @@ struct GameModel : public Serializable
 using GameModelPtr = QSharedPointer<GameModel const>;
 using GameModelMutablePtr = QSharedPointer<GameModel>;
 GameModelMutablePtr createGameModel(GameModel::Params const& params);
+GameModelMutablePtr createGameModel(Serializable::SavedData const& data);
 
 } // Logic
 

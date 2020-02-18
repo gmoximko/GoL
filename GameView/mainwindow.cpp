@@ -50,7 +50,6 @@ MainWindow::MainWindow(QQuickItem* parent)
   {
     qDebug() << e.what();
   }
-  loadGame();
 }
 
 QQuickItem* MainWindow::createGame(GameParams* game_params)
@@ -60,20 +59,41 @@ QQuickItem* MainWindow::createGame(GameParams* game_params)
   Q_ASSERT(game_view_ == nullptr);
   Q_ASSERT(game_controller_ == nullptr);
 
-  createGameModel(*game_params);
-  createGameView(*game_params);
-  createGameController(*game_params);
+  auto const empty_data = Logic::Serializable::SavedData();
+  createGameModel(*game_params, empty_data);
+  createGameView(empty_data);
+  createGameController(*game_params, empty_data);
   initializeLobby(game_params->lobby());
 
-  connect(game_view_.data(), &GameView::patternSelected,
-          game_controller_.data(), &Logic::GameController::addPattern);
-  connect(game_view_.data(), &GameView::stop,
-          game_controller_.data(), &Logic::GameController::onStop);
-  connect(game_controller_.data(), &Logic::GameController::stepMade,
-          game_view_.data(), &GameView::onStepMade);
-  connect(game_view_.data(), &GameView::gameSpeedChanged,
-          game_controller_.data(), &Logic::GameController::onGameSpeedChanged);
-  suppressSignals(game_network_.data(), true);
+  bindGame();
+  return game_window_.data();
+}
+
+QQuickItem* MainWindow::loadGame()
+{
+  auto const save = readSave();
+  auto const data = save.toMap();
+  if (data.empty() || std::any_of(data.cbegin(), data.cend(), [](auto const& piece)
+    {
+      return piece.toMap().empty();
+    }))
+  {
+    return nullptr;
+  }
+  GameParams empty_params;
+  try
+  {
+    createGameModel(empty_params, data["gameModel"].toMap());
+    createGameView(data["gameView"].toMap());
+    createGameController(empty_params, data["gameController"].toMap());
+    bindGame();
+  }
+  catch (std::runtime_error const& e)
+  {
+    qDebug() << e.what();
+    unloadGame();
+    return nullptr;
+  }
   return game_window_.data();
 }
 
@@ -132,6 +152,55 @@ void MainWindow::applicationStateChanged(Qt::ApplicationState state)
   }
 }
 
+void MainWindow::writeSave(QVariant const &data) const
+{
+  auto const app_data = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+  Q_ASSERT(!app_data.isEmpty());
+  QDir().mkpath(app_data);
+  QFile saved_game(app_data + "/savedGame");
+  if (!saved_game.open(QIODevice::WriteOnly))
+  {
+    Q_UNREACHABLE();
+    return;
+  }
+  QDataStream stream(&saved_game);
+  stream.setFloatingPointPrecision(QDataStream::DoublePrecision);
+  stream << data;
+}
+
+QVariant MainWindow::readSave() const
+{
+  auto const app_data = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
+  Q_ASSERT(!app_data.isEmpty());
+  QVariant result;
+  QFile saved_game(app_data + "/savedGame");
+  if (saved_game.open(QIODevice::ReadOnly))
+  {
+    QDataStream stream(&saved_game);
+    stream.setFloatingPointPrecision(QDataStream::DoublePrecision);
+    stream >> result;
+  }
+  saved_game.remove();
+  return result;
+}
+
+void MainWindow::bindGame() const
+{
+  Q_ASSERT(game_model_ != nullptr);
+  Q_ASSERT(game_view_ != nullptr);
+  Q_ASSERT(game_controller_ != nullptr);
+
+  connect(game_view_.data(), &GameView::patternSelected,
+          game_controller_.data(), &Logic::GameController::addPattern);
+  connect(game_view_.data(), &GameView::stop,
+          game_controller_.data(), &Logic::GameController::onStop);
+  connect(game_controller_.data(), &Logic::GameController::stepMade,
+          game_view_.data(), &GameView::onStepMade);
+  connect(game_view_.data(), &GameView::gameSpeedChanged,
+          game_controller_.data(), &Logic::GameController::onGameSpeedChanged);
+  suppressSignals(game_network_.data(), true);
+}
+
 void MainWindow::saveGame() const
 {
   if (game_model_ == nullptr || game_controller_ == nullptr || game_view_ == nullptr)
@@ -149,67 +218,42 @@ void MainWindow::saveGame() const
   writeSave(data);
 }
 
-void MainWindow::loadGame()
+void MainWindow::unloadGame()
 {
-  auto const save = readSave();
-  auto const data = save.toMap();
-  if (std::any_of(data.cbegin(), data.cend(), [](auto const& piece)
-    {
-      return piece.toMap().empty();
-    }))
-  {
-    return;
-  }
+  game_model_ = nullptr;
+  game_window_.reset();
 }
 
-void MainWindow::writeSave(QVariant const &data) const
+void MainWindow::createGameModel(GameParams const& params,
+                                 Logic::Serializable::SavedData const& data)
 {
-  auto const app_data = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-  Q_ASSERT(!app_data.isEmpty());
-  QDir().mkpath(app_data);
-  QFile saved_game(app_data + "/savedGame");
-  if (!saved_game.open(QIODevice::WriteOnly))
-  {
-    Q_UNREACHABLE();
-    return;
-  }
-  QDataStream stream(&saved_game);
-  stream << data;
+  Q_ASSERT(params.empty() != data.empty());
+  game_model_ = data.empty() ? Logic::createGameModel({ params.fieldSize() })
+                             : Logic::createGameModel(data);
 }
 
-QVariant MainWindow::readSave() const
+void MainWindow::createGameController(GameParams const& params,
+                                      Logic::Serializable::SavedData const& data)
 {
-  auto const app_data = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
-  Q_ASSERT(!app_data.isEmpty());
-  QVariant result;
-  QFile saved_game(app_data + "/savedGame");
-  if (saved_game.open(QIODevice::ReadOnly))
-  {
-    QDataStream stream(&saved_game);
-    stream >> result;
-  }
-  saved_game.remove();
-  return result;
-}
-
-void MainWindow::createGameModel(GameParams const& params)
-{
-  game_model_ = Logic::createGameModel({ params.fieldSize() });
-}
-
-void MainWindow::createGameController(GameParams const& params)
-{
+  Q_ASSERT(params.empty() != data.empty());
   Q_ASSERT(game_model_ != nullptr);
   Q_ASSERT(game_window_ != nullptr);
-  game_controller_ = new Logic::GameController(game_window_.data(),
-    { game_model_
-    , params.gameSpeed()
-    , params.initialScores()
-    , params.currentPlayer()
-    });
+  if (data.empty())
+  {
+    game_controller_ = new Logic::GameController(game_window_.data(),
+      { game_model_
+      , params.gameSpeed()
+      , params.initialScores()
+      , params.currentPlayer()
+      });
+  }
+  else
+  {
+    game_controller_ = new Logic::GameController(game_window_.data(), game_model_, data);
+  }
 }
 
-void MainWindow::createGameView(GameParams const&)
+void MainWindow::createGameView(Logic::Serializable::SavedData const& data)
 {
   QQmlComponent component(qmlEngine(this), QUrl(QStringLiteral("qrc:/GameWindow.qml")));
   auto* object = qobject_cast<QQuickItem*>(component.beginCreate(qmlContext(this)));
@@ -220,7 +264,14 @@ void MainWindow::createGameView(GameParams const&)
   game_view_ = object->findChild<GameView*>();
   Q_ASSERT(game_view_ != nullptr);
   Q_ASSERT(game_model_ != nullptr);
-  game_view_->initialize(game_model_);
+  if (data.empty())
+  {
+    game_view_->initialize(game_model_);
+  }
+  else
+  {
+    game_view_->initialize(game_model_, data);
+  }
   game_window_.reset(object);
 
   component.completeCreate();

@@ -68,7 +68,7 @@ Logic::Serializable::SavedData GameView::serialize() const
 {
   SavedData data;
   data["fieldOffset"] = field_offset_;
-  data["fieldScale"] = field_scale_;
+//  data["fieldScale"] = field_scale_;
   data["seed"] = seed_;
   return data;
 }
@@ -92,20 +92,34 @@ QPoint GameView::fieldCells() const
 
 void GameView::initialize(Logic::GameModelPtr game_model)
 {
+  if (seed_ == 0)
+  {
 #if defined(QT_DEBUG)
-  seed_ = std::mt19937::default_seed;
+    seed_ = std::mt19937::default_seed;
 #else
-  std::srand(std::time(nullptr));
-  seed_ = std::rand();
+    std::srand(std::time(nullptr));
+    seed_ = std::rand() % RAND_MAX + 1;
 #endif
+  }
+
   std::random_device device;
   std::mt19937 mt(device());
   mt.seed(seed_);
   colors_ = makeRandomColors(mt);
+
   game_model_ = game_model;
   setDarkTheme(QSettings().value("darkTheme", true).toBool());
   setRenderTarget(RenderTarget::FramebufferObject);
 //  setPerformanceHints(QQuickPaintedItem::FastFBOResizing);
+}
+
+void GameView::initialize(Logic::GameModelPtr game_model, SavedData const& data)
+{
+  field_offset_ = data["fieldOffset"].toPointF();
+//  field_scale_ = data["fieldScale"].toFloat();
+  seed_ = data["seed_"].toUInt();
+
+  initialize(game_model);
 }
 
 void GameView::setCurrentPattern(QVariant const& pattern_model)

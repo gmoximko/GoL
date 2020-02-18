@@ -152,9 +152,10 @@ public:
     Q_ASSERT([error code] == 0);
     Q_ASSERT(pipeline_state_);
 
-  //  NSUInteger exec_width = [pipeline_state_ threadExecutionWidth];
-  //  NSUInteger max_threads = [pipeline_state_ maxTotalThreadsPerThreadgroup] / exec_width;
-    threads_per_group_ = MTLSizeMake([pipeline_state_ maxTotalThreadsPerThreadgroup], 1, 1);
+    NSUInteger exec_width = [pipeline_state_ threadExecutionWidth];
+    NSUInteger max_threads = [pipeline_state_ maxTotalThreadsPerThreadgroup] / exec_width;
+    threads_per_group_ = MTLSizeMake(exec_width, max_threads, 1);
+//    threads_per_group_ = MTLSizeMake([pipeline_state_ maxTotalThreadsPerThreadgroup], 1, 1);
 
     command_queue_ = [device newCommandQueue];
     Q_ASSERT(command_queue_);
