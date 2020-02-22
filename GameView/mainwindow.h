@@ -79,6 +79,11 @@ public:
   explicit MainWindow(QQuickItem* parent = nullptr);
 
   Q_INVOKABLE bool isNetworkEnabled() const { return game_network_ != nullptr; }
+  Q_INVOKABLE int gameSpeed() const
+  {
+    Q_ASSERT(game_controller_ != nullptr);
+    return game_controller_->updateTime();
+  }
 
   Q_INVOKABLE QQuickItem* createGame(GameParams* game_params);
   Q_INVOKABLE QQuickItem* loadGame();

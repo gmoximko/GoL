@@ -6,8 +6,8 @@ import GoL 1.0
 
 Page {
   id: gameWindow
-  width: parent.width
-  height: parent.height
+  width: mainWindow.width
+  height: mainWindow.height
   title: "Game of life"
 
   property alias gameSpeed: gameSpeed.value
@@ -58,8 +58,13 @@ Page {
         }
       }
     }
+    Item {
+      id: scaleProvider
+      enabled: false
+      Component.onCompleted: scale = gameView.fieldScale
+    }
     PinchHandler {
-      target: null
+      target: scaleProvider
       minimumPointCount: 2
       maximumPointCount: 2
       minimumScale: gameView.minScale

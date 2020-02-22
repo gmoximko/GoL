@@ -217,16 +217,15 @@ void LifeProcessorImpl::updateData()
 
 void LifeProcessorImpl::loadLifeUnits(QByteArray const& life_units)
 {
-  if (life_units.isEmpty())
+  if (!life_units.isEmpty())
   {
-    return;
+    Q_ASSERT(fieldLength() == static_cast<SizeT>(life_units.size() * 8));
+    std::memcpy(data(), life_units.data(), life_units.size());
+    fillLifeUnits<Chunk>(reinterpret_cast<uint8_t const*>(life_units.data()),
+                         QPoint(0, life_units.size() / sizeof(Chunk)),
+                         field_size_,
+                         life_units_);
   }
-  Q_ASSERT(fieldLength() == static_cast<SizeT>(life_units.size() * 8));
-  std::memcpy(data(), life_units.data(), life_units.size());
-  fillLifeUnits<Chunk>(reinterpret_cast<uint8_t const*>(life_units.data()),
-                       QPoint(0, life_units.size() / sizeof(Chunk)),
-                       field_size_,
-                       life_units_);
 }
 
 LifeProcessorPtr createLifeProcessor(QPoint field_size, QByteArray const& life_units)

@@ -24,6 +24,8 @@ public:
   explicit GameController(QObject* parent, GameModelMutablePtr game_model, SavedData const& data);
   ~GameController() override;
 
+  int updateTime() const { return update_time_; }
+
   void onApplicationActive();
   void onApplicationInactive();
 

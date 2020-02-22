@@ -68,7 +68,7 @@ Logic::Serializable::SavedData GameView::serialize() const
 {
   SavedData data;
   data["fieldOffset"] = field_offset_;
-//  data["fieldScale"] = field_scale_;
+  data["fieldScale"] = field_scale_;
   data["seed"] = seed_;
   return data;
 }
@@ -116,7 +116,7 @@ void GameView::initialize(Logic::GameModelPtr game_model)
 void GameView::initialize(Logic::GameModelPtr game_model, SavedData const& data)
 {
   field_offset_ = data["fieldOffset"].toPointF();
-//  field_scale_ = data["fieldScale"].toFloat();
+  field_scale_ = data["fieldScale"].toReal();
   seed_ = data["seed_"].toUInt();
 
   initialize(game_model);
@@ -148,7 +148,12 @@ void GameView::paint(QPainter* painter_ptr)
   drawSelectedCell(painter);
   painter.restore();
 
-  auto const normalized_scale = Utilities::Qt::normalized(field_scale_, minScale(), maxScale());
+  auto const min_scale = minScale();
+  auto const max_scale = maxScale();
+  auto const normalized_scale = Utilities::Qt::normalized(
+        Utilities::Qt::clamp(field_scale_, min_scale, max_scale),
+        min_scale,
+        max_scale);
   if (normalized_scale < c_scale_to_hide_grid)
   {
     return;
