@@ -7,6 +7,7 @@
 #include <QPoint>
 #include <QTransform>
 #include <QPointer>
+#include <QImage>
 
 #include "../GameLogic/gamemodel.h"
 
@@ -97,13 +98,17 @@ signals:
   bool stop();
   void gameSpeedChanged(int update_time);
 
+protected:
+  void geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry) override;
+
 private:
   using MaybeTRS = std::optional<QTransform>;
   void drawGrid(QPainter& painter) const;
-  void drawLifeCells(QPainter& painter) const;
-  void drawSelectedCell(QPainter& painter) const;
-  void drawUnit(QPainter& painer, QPoint cell) const;
-  void drawUnitRandomColor(QPainter& painer, QPoint cell) const;
+  void drawLifeCells();
+  void drawSelectedCell();
+  void drawSelectedUnit(QPoint cell);
+  void drawLifeUnit(QPoint cell);
+  void drawUnitPixel(QPointF center, QColor const& color);
   void drawCoordinates(QPainter& painter) const;
 
   QPointF fieldSize() const;
@@ -124,6 +129,7 @@ private:
   Logic::PatternPtr current_pattern_;
   Logic::GameModelPtr game_model_;
   Logic::Score scores_ = 0;
+  QImage image_;
 };
 using GameViewPtr = QPointer<GameView>;
 

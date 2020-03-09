@@ -136,17 +136,13 @@ void GameView::setCurrentPattern(QVariant const& pattern_model)
 
 void GameView::paint(QPainter* painter_ptr)
 {
+  drawLifeCells();
+  drawSelectedCell();
+
   auto& painter = *painter_ptr;
   painter.setPen(Qt::GlobalColor::white);
 //  painter.setRenderHint(QPainter::Antialiasing);
-
-  painter.save();
-  drawLifeCells(painter);
-  painter.restore();
-
-  painter.save();
-  drawSelectedCell(painter);
-  painter.restore();
+  painter.drawImage(boundingRect(), image_);
 
   auto const min_scale = minScale();
   auto const max_scale = maxScale();
@@ -325,6 +321,12 @@ void GameView::onStepMade(Logic::Score scores)
   update();
 }
 
+void GameView::geometryChanged(const QRectF &newGeometry, const QRectF &oldGeometry)
+{
+  image_ = QImage(width(), height(), QImage::Format_RGB32);
+  QQuickPaintedItem::geometryChanged(newGeometry, oldGeometry);
+}
+
 void GameView::drawGrid(QPainter& painter) const
 {
   auto const window = size();
@@ -344,16 +346,16 @@ void GameView::drawGrid(QPainter& painter) const
   }
 }
 
-void GameView::drawLifeCells(QPainter& painter) const
+void GameView::drawLifeCells()
 {
-  painter.setBrush(QBrush(Qt::GlobalColor::white));
+  image_.fill(darkTheme() ? c_dark_theme_color : c_light_theme_color);
   for (auto const unit : game_model_->lifeUnits())
   {
-    drawUnitRandomColor(painter, QPoint(unit.x(), unit.y()));
+    drawLifeUnit(QPoint(unit.x(), unit.y()));
   }
 }
 
-void GameView::drawSelectedCell(QPainter& painter) const
+void GameView::drawSelectedCell()
 {
   if (!pattern_trs_)
   {
@@ -366,38 +368,42 @@ void GameView::drawSelectedCell(QPainter& painter) const
     auto const cell = QPoint(static_cast<int>(trs.dx()), static_cast<int>(trs.dy()));
     auto const size = QSizeF(pixelsPerCell().x(), pixelsPerCell().y());
     QRectF rect(cellToPixels(cell), size);
-    painter.fillRect(rect, QBrush(c_pattern_selection_color));
+    QPainter(&image_).fillRect(rect, QBrush(c_pattern_selection_color));
   }
   else
   {
-    painter.setPen(c_pattern_selection_color);
     for (auto const& point : current_pattern_->points())
     {
-      drawUnit(painter, Logic::loopPos(point * trs, game_model_->cells()));
+      drawSelectedUnit(Logic::loopPos(point * trs, game_model_->cells()));
     }
   }
 }
 
-void GameView::drawUnit(QPainter& painter, QPoint cell) const
+void GameView::drawSelectedUnit(QPoint cell)
 {
   auto const center = cellToPixels(cell) + pixelsPerCell() / 2.0;
-//  auto const radius = pixelsPerCell() * c_life_pixels_ratio;
-//  painter.drawEllipse(center, radius.x(), radius.y());
   if (boundingRect().contains(center))
   {
-    painter.drawPoint(center);
+    drawUnitPixel(center, c_pattern_selection_color);
   }
 }
 
-void GameView::drawUnitRandomColor(QPainter& painter, QPoint cell) const
+void GameView::drawLifeUnit(QPoint cell)
 {
   auto const center = cellToPixels(cell) + pixelsPerCell() / 2.0;
   if (boundingRect().contains(center))
   {
     auto const hash = qHash(qMakePair(cell.x(), cell.y()));
-    painter.setPen(colors_[hash % colors_.size()]);
-    painter.drawPoint(center);
+    drawUnitPixel(center, colors_[hash % colors_.size()]);
   }
+}
+
+void GameView::drawUnitPixel(QPointF center, QColor const& color)
+{
+  auto const x = static_cast<int>(center.x());
+  auto const y = static_cast<int>(center.y());
+  auto* rgb = reinterpret_cast<QRgb*>(image_.bits());
+  rgb[x + y * image_.width()] = color.rgb();
 }
 
 void GameView::drawCoordinates(QPainter& painter) const
