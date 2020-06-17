@@ -99,13 +99,17 @@ public:
   {
     QByteArray bytes;
     auto const byte_count = static_cast<int>(resource.size());
-    if (resource.isCompressed())
+    switch (resource.compressionAlgorithm())
     {
+    case QResource::ZstdCompression:
+      Q_UNREACHABLE();
+      break;
+    case QResource::ZlibCompression:
       bytes = qUncompress(resource.data(), byte_count);
-    }
-    else
-    {
+      break;
+    case QResource::NoCompression:
       bytes = QByteArray(reinterpret_cast<char const*>(resource.data()), byte_count);
+      break;
     }
     Q_ASSERT(!bytes.isEmpty());
 

@@ -128,7 +128,7 @@ MainWindow {
             snapMode: Slider.SnapAlways
             from: 100
             value: 50
-            to: 1
+            to: 0
             stepSize: 1
           }
           Label {

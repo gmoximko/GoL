@@ -15,11 +15,8 @@ void ThreadChecker::check() const
 
 void ThreadChecker::check()
 {
-  if (thread_ == nullptr)
-  {
-    thread_ = QThread::currentThread();
-  }
-  Q_ASSERT(thread_ == QThread::currentThread());
+  Q_ASSERT((thread_ == nullptr ? thread_ = QThread::currentThread() : thread_)
+           == QThread::currentThread());
 }
 
 }} // Utilities::Qt
