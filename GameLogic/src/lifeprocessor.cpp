@@ -1,4 +1,5 @@
 #include <QDebug>
+#include <QRandomGenerator>
 
 #include "lifeprocessor.h"
 
@@ -86,12 +87,13 @@ LifeProcessorImpl::LifeProcessorImpl(QPoint field_size)
   , main_thread_(QThread::currentThread())
 {
   Q_ASSERT(fieldLength() % 8 == 0);
+  timer_.start();
 }
 
 LifeProcessorImpl::~LifeProcessorImpl()
 {
   mainThread().check();
-  qDebug() << "LifeProcessor min post process duration ";
+  qDebug() << "~LifeProcessorImpl()";
 }
 
 LifeUnits const& LifeProcessorImpl::lifeUnits(QRect area) const
@@ -148,6 +150,7 @@ void LifeProcessorImpl::processLife(bool compute)
     if (compute)
     {
       data_.swap(next_data_);
+      qDebug() << "Elapsed " << timer_.elapsed();
       post_processed_.deref();
     }
   }
@@ -179,13 +182,20 @@ void LifeProcessorImpl::run()
     post_processes.emplace_back(range, *this);
   }
 */
+
+  QElapsedTimer time;
+  time.start();
+
   for (; !exit_;)
   {
     if (!post_processed_ && computed())
     {
+      qDebug() << "Process " << time.restart();
       updateData();
       std::memcpy(next_data_.data(), data(), next_data_.size());
+      qDebug() << "PostProcess " << time.elapsed();
       post_processed_.ref();
+      time.restart();
       processLife();
     }
   }
@@ -245,6 +255,19 @@ void LifeProcessorImpl::setLife(LifeUnit unit, uint8_t* data)
 
 void LifeProcessorImpl::loadLifeUnits(QByteArray const& life_units)
 {
+  Q_ASSERT(life_units.isEmpty());
+  auto* generator = QRandomGenerator::global();
+  for (SizeT position = 0; position < fieldLength(); ++position)
+  {
+    if (generator->bounded(2) == 0)
+    {
+      continue;
+    }
+    Q_ASSERT(position < fieldLength());
+    auto const byte = position >> 3;
+    auto const bit = position & 7;
+    data()[byte] |= 1 << bit;
+  }
   if (!life_units.isEmpty())
   {
     Q_ASSERT(fieldLength() == static_cast<SizeT>(life_units.size() * 8));

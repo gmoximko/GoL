@@ -81,6 +81,7 @@ private:
   LifeUnits input_;
   std::vector<uint8_t> data_;
   std::vector<uint8_t> next_data_;
+  QElapsedTimer timer_;
 
   QAtomicInt active_post_processes_;
   QAtomicInt post_processed_;

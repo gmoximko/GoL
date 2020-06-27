@@ -207,7 +207,7 @@ protected: // LifeProcessorImpl
     [command_buffer addCompletedHandler: ^(id<MTLCommandBuffer> cb)
     {
       Q_ASSERT([[cb error] code] == 0);
-//      qDebug() << "CFTimeInterval executionDuration " << (cb.GPUEndTime - cb.GPUStartTime);
+      qDebug() << "CFTimeInterval " << (cb.GPUEndTime - cb.GPUStartTime) * 1000;
       handleComputeCompletion();
     }];
     [command_buffer commit];

@@ -124,7 +124,7 @@ void MainWindow::joinLobby(GameParams* game_params)
 void MainWindow::aboutToQuit()
 {
   qDebug() << "aboutToQuit";
-  saveGame();
+//  saveGame();
 }
 
 void MainWindow::applicationStateChanged(Qt::ApplicationState state)
@@ -133,7 +133,7 @@ void MainWindow::applicationStateChanged(Qt::ApplicationState state)
   switch (state)
   {
   case Qt::ApplicationState::ApplicationSuspended:
-    saveGame();
+//    saveGame();
     break;
   case Qt::ApplicationState::ApplicationHidden:
     break;
