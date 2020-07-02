@@ -173,6 +173,7 @@ protected: // LifeProcessorImpl
 private:
   void handleComputeCompletion()
   {
+    computeThread().check();
     Q_ASSERT(!computed());
     Q_ASSERT(active_life_processes_ == 0);
     input_.swap(output_);

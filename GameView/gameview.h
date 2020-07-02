@@ -115,7 +115,8 @@ private:
   QPoint cellsOnTheScreen() const;
   QPointF cellOffset() const;
   QPointF pixelsPerCell() const;
-  QPointF cellToPixels(QPoint cell) const;
+  QPointF worldToScreen(QPoint world) const;
+  QPoint screenToWorld(QPointF screen) const;
   QPointF loopPos(QPointF point) const;
   qreal maxScale() const;
   qreal minScale() const;

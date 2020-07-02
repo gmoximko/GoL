@@ -18,10 +18,7 @@ public:
   ~LifeProcessorImpl() override;
 
 public: // LifeProcessor
-  LifeUnits const& lifeUnits() const final
-  {
-    return life_units_;
-  }
+  LifeUnits const& lifeUnits(QRect area) const final;
 
   void init(QByteArray const& life_units) final;
   void destroy() final;
@@ -65,23 +62,30 @@ private: // QThread
   void run() final;
 
 private:
+  /* unused
   template<typename Chunk>
   class PostProcess;
   using Chunk = uint64_t;
 
   void prepareLifeUnits(std::vector<PostProcess<Chunk>> const& post_processes);
   void startAndWaitPostProcesses(std::vector<PostProcess<Chunk>>& post_processes);
-  void updateData();
+  */
+
+  bool getLife(LifeUnit unit, uint8_t const* data) const;
+  void setLife(LifeUnit unit, uint8_t* data);
   void loadLifeUnits(QByteArray const& life_units);
+  void updateData();
 
   QPoint const field_size_;
-  LifeUnits life_units_;
-  LifeUnits next_life_units_;
+  LifeUnits mutable life_units_;
+  LifeUnits input_;
+  std::vector<uint8_t> data_;
+  std::vector<uint8_t> next_data_;
+
   QAtomicInt active_post_processes_;
   QAtomicInt post_processed_;
   QAtomicInt exit_;
   QMutex mutex_;
-  LifeUnits input_;
   Utilities::Qt::ThreadChecker main_thread_;
   Utilities::Qt::ThreadChecker compute_thread_{this};
 };

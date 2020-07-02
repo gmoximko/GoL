@@ -72,9 +72,9 @@ public:
   {
     return all_patterns_.patternAt(idx);
   }
-  LifeUnits const& lifeUnits() const override
+  LifeUnits const& lifeUnits(QRect area) const override
   {
-    return life_processor_->lifeUnits();
+    return life_processor_->lifeUnits(area);
   }
 
   LifeProcessor& lifeProcessor() override

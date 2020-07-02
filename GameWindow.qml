@@ -143,7 +143,7 @@ Page {
     Item {
       property var pattern: gameView.patternModelAt(index)
       x: 5
-      width: parent.width
+      width: parent == null ? 0 : parent.width
       height: 40
 
       MouseArea {

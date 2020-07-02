@@ -144,6 +144,7 @@ void GameView::paint(QPainter* painter_ptr)
 //  painter.setRenderHint(QPainter::Antialiasing);
   painter.drawImage(boundingRect(), image_);
 
+  return;
   auto const min_scale = minScale();
   auto const max_scale = maxScale();
   auto const normalized_scale = Utilities::Qt::normalized(
@@ -190,10 +191,7 @@ QVariant GameView::patternModelAt(int idx) const
 
 void GameView::pressed(QPointF point)
 {
-  point = loopPos(point - field_offset_);
-  QPoint cell(static_cast<int>(point.x() / pixelsPerCell().x()),
-              static_cast<int>(point.y() / pixelsPerCell().y()));
-
+  auto const cell = screenToWorld(point);
   if (!pattern_trs_)
   {
     pattern_trs_ = QTransform();
@@ -349,7 +347,12 @@ void GameView::drawGrid(QPainter& painter) const
 void GameView::drawLifeCells()
 {
   image_.fill(darkTheme() ? c_dark_theme_color : c_light_theme_color);
-  for (auto const unit : game_model_->lifeUnits())
+
+  auto const rect = boundingRect();
+  auto const visible_world = QRect(screenToWorld(rect.topLeft()),
+                                   QSize(rect.width() / pixelsPerCell().x(),
+                                         rect.height() / pixelsPerCell().y()));
+  for (auto const unit : game_model_->lifeUnits(visible_world))
   {
     drawLifeUnit(QPoint(unit.x(), unit.y()));
   }
@@ -367,7 +370,7 @@ void GameView::drawSelectedCell()
   {
     auto const cell = QPoint(static_cast<int>(trs.dx()), static_cast<int>(trs.dy()));
     auto const size = QSizeF(pixelsPerCell().x(), pixelsPerCell().y());
-    QRectF rect(cellToPixels(cell), size);
+    QRectF rect(worldToScreen(cell), size);
     QPainter(&image_).fillRect(rect, QBrush(c_pattern_selection_color));
   }
   else
@@ -381,7 +384,7 @@ void GameView::drawSelectedCell()
 
 void GameView::drawSelectedUnit(QPoint cell)
 {
-  auto const center = cellToPixels(cell) + pixelsPerCell() / 2.0;
+  auto const center = worldToScreen(cell) + pixelsPerCell() / 2.0;
   if (boundingRect().contains(center))
   {
     drawUnitPixel(center, c_pattern_selection_color);
@@ -390,7 +393,7 @@ void GameView::drawSelectedUnit(QPoint cell)
 
 void GameView::drawLifeUnit(QPoint cell)
 {
-  auto const center = cellToPixels(cell) + pixelsPerCell() / 2.0;
+  auto const center = worldToScreen(cell) + pixelsPerCell() / 2.0;
   if (boundingRect().contains(center))
   {
     auto const hash = qHash(qMakePair(cell.x(), cell.y()));
@@ -465,11 +468,18 @@ QPointF GameView::pixelsPerCell() const
   return c_pixels_per_cell * field_scale_;
 }
 
-QPointF GameView::cellToPixels(QPoint cell) const
+QPointF GameView::worldToScreen(QPoint world) const
 {
-  QPointF const point(cell.x() * pixelsPerCell().x(),
-                      cell.y() * pixelsPerCell().y());
+  QPointF const point(world.x() * pixelsPerCell().x(),
+                      world.y() * pixelsPerCell().y());
   return loopPos(point + field_offset_);
+}
+
+QPoint GameView::screenToWorld(QPointF screen) const
+{
+  screen = loopPos(screen - field_offset_);
+  return QPoint(static_cast<int>(screen.x() / pixelsPerCell().x()),
+                static_cast<int>(screen.y() / pixelsPerCell().y()));
 }
 
 QPointF GameView::loopPos(QPointF point) const

@@ -3,7 +3,7 @@
 #include "lifeprocessor.h"
 
 namespace Logic {
-
+/* unused
 namespace {
 
 template<typename Chunk>
@@ -78,16 +78,37 @@ private:
   LifeProcessorImpl& processor_;
   LifeUnits chunk_units_;
 };
-
+*/
 LifeProcessorImpl::LifeProcessorImpl(QPoint field_size)
   : field_size_(field_size)
+  , data_(fieldLength() / 8)
+  , next_data_(fieldLength() / 8)
   , main_thread_(QThread::currentThread())
-{}
+{
+  Q_ASSERT(fieldLength() % 8 == 0);
+}
 
 LifeProcessorImpl::~LifeProcessorImpl()
 {
   mainThread().check();
   qDebug() << "LifeProcessor min post process duration ";
+}
+
+LifeUnits const& LifeProcessorImpl::lifeUnits(QRect area) const
+{
+  life_units_.clear();
+  for (uint16_t y = area.y(), y_end = y + area.height(); y < y_end; ++y)
+  {
+    for (uint16_t x = area.x(), x_end = x + area.width(); x < x_end; ++x)
+    {
+      LifeUnit const unit((x + cols()) % cols(), (y + rows()) % rows());
+      if (getLife(unit, data_.data()))
+      {
+        life_units_.push_back(unit);
+      }
+    }
+  }
+  return life_units_;
 }
 
 void LifeProcessorImpl::init(QByteArray const& life_units)
@@ -110,7 +131,11 @@ void LifeProcessorImpl::destroy()
 void LifeProcessorImpl::addUnits(LifeUnits units)
 {
   mainThread().check();
-  life_units_.insert(life_units_.end(), units.cbegin(), units.cend());
+  for (auto const unit : units)
+  {
+    setLife(unit, data_.data());
+  }
+//  life_units_.insert(life_units_.end(), units.cbegin(), units.cend());
   QMutexLocker locker(&mutex_);
   input_.insert(input_.end(), units.cbegin(), units.cend());
 }
@@ -122,7 +147,7 @@ void LifeProcessorImpl::processLife(bool compute)
   {
     if (compute)
     {
-      life_units_.swap(next_life_units_);
+      data_.swap(next_data_);
       post_processed_.deref();
     }
   }
@@ -130,14 +155,15 @@ void LifeProcessorImpl::processLife(bool compute)
 
 QByteArray LifeProcessorImpl::serialize() const
 {
+  mainThread().check();
   static_assert(std::is_same_v<uint8_t, char> || std::is_same_v<uint8_t, unsigned char>);
-  return QByteArray(reinterpret_cast<char const*>(data()), fieldLength() / 8);
+  return QByteArray(reinterpret_cast<char const*>(data_.data()), fieldLength() / 8);
 }
 
 void LifeProcessorImpl::run()
 {
   computeThread().check();
-
+/* unused
   Q_ASSERT(fieldLength() % 8 == 0);
   Q_ASSERT(fieldLength() / 8 % sizeof(Chunk) == 0);
   qDebug() << "Max threads: " << threadPool().maxThreadCount();
@@ -152,20 +178,19 @@ void LifeProcessorImpl::run()
     auto const range = QPoint(chunk_size * idx, chunk_size * (idx + 1) + remainder);
     post_processes.emplace_back(range, *this);
   }
-
+*/
   for (; !exit_;)
   {
     if (!post_processed_ && computed())
     {
-      startAndWaitPostProcesses(post_processes);
-      prepareLifeUnits(post_processes);
-      post_processed_.ref();
       updateData();
+      std::memcpy(next_data_.data(), data(), next_data_.size());
+      post_processed_.ref();
       processLife();
     }
   }
 }
-
+/* unused
 void LifeProcessorImpl::prepareLifeUnits(std::vector<PostProcess<Chunk>> const& post_processes)
 {
   computeThread().check();
@@ -198,21 +223,24 @@ void LifeProcessorImpl::startAndWaitPostProcesses(std::vector<PostProcess<Chunk>
   }
   while (active_post_processes_ != 0);
 }
+*/
 
-void LifeProcessorImpl::updateData()
+bool LifeProcessorImpl::getLife(LifeUnit unit, uint8_t const* data) const
 {
-  computeThread().check();
-  Q_ASSERT(computed());
-  QMutexLocker locker(&mutex_);
-  for (auto const unit : input_)
-  {
-    auto const position = unit.x() + unit.y() * rows();
-    Q_ASSERT(position < fieldLength());
-    auto const byte = position >> 3;
-    auto const bit = position & 7;
-    data()[byte] |= 1 << bit;
-  }
-  input_.clear();
+  auto const position = unit.x() + unit.y() * cols();
+  Q_ASSERT(position < fieldLength());
+  auto const byte = position >> 3;
+  auto const bit = position & 7;
+  return (data[byte] & 1 << bit) != 0;
+}
+
+void LifeProcessorImpl::setLife(LifeUnit unit, uint8_t* data)
+{
+  auto const position = unit.x() + unit.y() * cols();
+  Q_ASSERT(position < fieldLength());
+  auto const byte = position >> 3;
+  auto const bit = position & 7;
+  data[byte] |= 1 << bit;
 }
 
 void LifeProcessorImpl::loadLifeUnits(QByteArray const& life_units)
@@ -221,11 +249,24 @@ void LifeProcessorImpl::loadLifeUnits(QByteArray const& life_units)
   {
     Q_ASSERT(fieldLength() == static_cast<SizeT>(life_units.size() * 8));
     std::memcpy(data(), life_units.data(), life_units.size());
-    fillLifeUnits<Chunk>(reinterpret_cast<uint8_t const*>(life_units.data()),
-                         QPoint(0, life_units.size() / sizeof(Chunk)),
-                         field_size_,
-                         life_units_);
+    std::memcpy(data_.data(), life_units.data(), life_units.size());
+//    fillLifeUnits<Chunk>(reinterpret_cast<uint8_t const*>(life_units.data()),
+//                         QPoint(0, life_units.size() / sizeof(Chunk)),
+//                         field_size_,
+//                         life_units_);
   }
+}
+
+void LifeProcessorImpl::updateData()
+{
+  computeThread().check();
+  Q_ASSERT(computed());
+  QMutexLocker locker(&mutex_);
+  for (auto const unit : input_)
+  {
+    setLife(unit, data());
+  }
+  input_.clear();
 }
 
 LifeProcessorPtr createLifeProcessor(QPoint field_size, QByteArray const& life_units)

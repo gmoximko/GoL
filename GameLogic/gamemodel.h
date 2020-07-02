@@ -74,7 +74,7 @@ using LifeUnits = std::vector<LifeUnit>;
 struct LifeProcessor
 {
   virtual ~LifeProcessor() = default;
-  virtual LifeUnits const& lifeUnits() const = 0;
+  virtual LifeUnits const& lifeUnits(QRect area) const = 0;
 
   virtual void init(QByteArray const& life_units) = 0;
   virtual void destroy() = 0;
@@ -104,7 +104,7 @@ struct GameModel : public Serializable
   virtual QPoint cells() const = 0;
   virtual SizeT patternCount() const = 0;
   virtual PatternPtr patternAt(SizeT idx) const = 0;
-  virtual LifeUnits const& lifeUnits() const = 0;
+  virtual LifeUnits const& lifeUnits(QRect area) const = 0;
 
   virtual LifeProcessor& lifeProcessor() = 0;
 };
